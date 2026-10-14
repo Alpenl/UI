@@ -91,18 +91,18 @@ function Preview({ change, onSaved }: { change: StructuralChange; onSaved: () =>
         </p>
       )}
       {impact && (
-        <div className="rounded-lg border border-g-line p-3 space-y-3">
+        <div className="border-t border-g-line pt-4 space-y-4">
           <p>
             {t('admin:impactMembers', {
               before: impact.counts.members_before ?? 0,
               after: impact.counts.members_after ?? 0,
             })}
           </p>
-          <dl className="grid grid-cols-2 gap-2">
+          <dl className="grid grid-cols-4 max-[760px]:grid-cols-2 gap-px bg-g-line border border-g-line rounded-md overflow-hidden">
             {Object.entries(labels).map(([reason, label]) => (
-              <div key={reason}>
-                <dt>{label}</dt>
-                <dd>{impact.counts[reason] ?? 0}</dd>
+              <div key={reason} className="bg-white px-3 py-2.5">
+                <dd className="font-serif text-[20px] leading-none tabular-nums">{impact.counts[reason] ?? 0}</dd>
+                <dt className="text-[11.5px] text-g-sub mt-1.5">{label}</dt>
               </div>
             ))}
           </dl>

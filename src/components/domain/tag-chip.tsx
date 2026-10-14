@@ -51,14 +51,14 @@ export const Chip = ({
       tabIndex={onClick ? 0 : undefined}
       aria-pressed={onClick ? !!active : undefined}
       title={onClick ? (active ? translate('common:clearFilter') : translate('common:filterByThisTag')) : undefined}
-      className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[12px] font-medium ${def(dim).chip} ${onClick ? 'cursor-pointer hover:brightness-95 hover:shadow-sm transition' : ''} ${active ? 'ring-2 ring-g-blue ring-offset-1' : ''}`}
+      className={`inline-flex items-center gap-1 h-6 px-2 rounded-[4px] text-[12px] font-medium ${def(dim).chip} ${onClick ? 'cursor-pointer hover:brightness-95 hover:shadow-sm transition' : ''} ${active ? 'ring-2 ring-g-blue ring-offset-1' : ''}`}
     >
       {children}
       {onRemove && (
         <button
           onClick={onRemove}
           aria-label={translate('common:removeTag')}
-          className="-mr-1 w-4 h-4 grid place-items-center rounded-full hover:bg-black/10"
+          className="-mr-1 w-4 h-4 grid place-items-center rounded-[3px] hover:bg-black/10"
         >
           <Icon d={P.x} className="w-3 h-3" />
         </button>

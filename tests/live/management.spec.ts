@@ -140,9 +140,9 @@ test('collection state tabs have exactly one visual and accessible selection', a
     await tab.click()
     const group = tab.locator('..')
     await expect(group.locator('[aria-selected="true"]')).toHaveCount(1)
-    await expect(group.locator('.border-g-blue')).toHaveCount(1)
+    await expect(group.locator('.bg-g-text')).toHaveCount(1)
     await expect(tab).toHaveAttribute('aria-selected', 'true')
-    await expect(tab).toHaveClass(/border-g-blue/)
+    await expect(tab).toHaveClass(/bg-g-text/)
   }
 })
 

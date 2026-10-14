@@ -136,12 +136,12 @@ export function Reader({
                 (el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight)) * 100 + '%'
           }}
         >
-          <article className="max-w-[660px] mx-auto px-8 pt-10 pb-28 rise">
+          <article className="max-w-[720px] mx-auto px-10 pt-14 pb-32 rise">
             <div className="text-[12.5px] text-g-sub">
               <span className="text-g-green">{a.source}</span> · {savedDateLabel(a.date)} ·{' '}
               {contentLanguageLabel(a.lang)}
             </div>
-            <h1 className="text-[30px] leading-[1.3] font-semibold mt-3">{a.title}</h1>
+            <h1 className="text-[34px] leading-[1.28] font-semibold mt-3 text-balance">{a.title}</h1>
             {sites.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px]">
                 <span className="text-g-sub">{translate('library:relatedSavedWebsites')}</span>
@@ -189,7 +189,7 @@ export function Reader({
               </div>
             ) : (
               <>
-                <aside className="mt-6 pl-4 border-l-2 border-g-blue">
+                <aside className="mt-8 py-4 pl-5 pr-5 border-l-2 border-g-blue bg-g-paper rounded-r-xl">
                   <div className="text-[12px] font-medium tracking-[.14em] text-g-blue-dark">
                     {a.kind === 'site' ? translate('library:about') : translate('library:abstract')}
                   </div>

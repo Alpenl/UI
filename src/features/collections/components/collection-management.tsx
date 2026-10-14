@@ -50,13 +50,17 @@ export function CollectionManagement({ collection: c }: { collection: Collection
   const members = memberPage.data?.items ?? []
   const action = (type: string, data: object = {}) => void liveStore.action(c.id, type, data)
   return (
-    <div className="mt-3 text-[13px]">
+    <div className="mt-4 pt-4 border-t border-g-line text-[13px] flex flex-wrap items-center gap-2">
       {state.data.relationsVersion === 1 && state.data.structureEditable !== false && <RuleEditor collection={c} />}
-      <button className="text-g-blue" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <button
+        className="h-9 px-3.5 rounded-[4px] text-[13px] font-medium text-g-blue hover:bg-g-tint transition"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
         {t('admin:members')}
       </button>
       {open && (
-        <div className="mt-3 rounded-xl border border-g-line p-4 space-y-4">
+        <div className="w-full order-3 pt-3 space-y-4">
           <div className="flex flex-wrap gap-2">
             <Btn onClick={() => setPreview((v) => !v)}>{t('admin:previewRule')}</Btn>
             <Btn disabled={!c.ruleEnabled || state.dirty} onClick={() => action('backfill')}>

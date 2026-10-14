@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ClassificationStatus } from './classification-status'
 import { today } from '@/domain/library'
 import { formatDate } from '@/i18n'
@@ -15,6 +16,7 @@ import { Label } from '@/components/ui/section-label'
 
 export function Overview(p: LibProps) {
   const { t: translate } = useTranslation()
+  const [showAllFailed, setShowAllFailed] = useState(false)
 
   const WEEKDAY = formatDate(today(), { weekday: 'long' })
   const { kind, arts, cols, range, setRange } = p
@@ -70,17 +72,23 @@ export function Overview(p: LibProps) {
     return g
   }, [])
   const active = cols.filter((c) => !c.archived).sort((a, b) => +b.pinned - +a.pinned)
+  const maxCount = Math.max(1, ...active.map((c) => c.count ?? arts.filter((a) => c.id in a.cols).length))
+  const shownFailed = showAllFailed ? failed : failed.slice(0, 4)
   const scope = range === 'all' ? translate('library:allTime') : rangeLabel(range)
 
   return (
     <div className="h-full overflow-y-auto scroll-quiet">
-      <div className="max-w-[860px] mx-auto px-10 py-10 rise">
+      <div className="max-w-[900px] mx-auto px-10 pt-12 pb-20 rise">
         <div className="text-[12px] text-g-sub tracking-wide">
           {dayLabel(0)} · {WEEKDAY}
         </div>
-        <h1 className="text-[30px] font-semibold mt-1.5 leading-tight">
+        <h1 className="text-[34px] font-semibold mt-2 leading-tight text-balance">
           {range === 'all'
-            ? translate('library:savedHeading', { count: totalCount, unit: KINDS[kind].unit, kind: KINDS[kind].noun })
+            ? translate('library:savedHeading', {
+                count: totalCount,
+                unit: KINDS[kind].unit,
+                kind: KINDS[kind].noun,
+              })
             : translate('library:organized', {
                 range: scope,
                 count: savedCount,
@@ -88,7 +96,7 @@ export function Overview(p: LibProps) {
                 kind: KINDS[kind].noun,
               })}
         </h1>
-        <p className="text-[14px] text-g-sub mt-1.5">
+        <p className="text-[14.5px] text-g-sub mt-2 max-w-[56ch] leading-relaxed">
           {translate('library:summariesTagsAndCollectionsAreReadyTheList')}
         </p>
 
@@ -126,7 +134,7 @@ export function Overview(p: LibProps) {
           )}
         </div>
 
-        <dl className="grid grid-cols-4 mt-8 border border-g-line rounded-xl divide-x divide-g-line overflow-hidden max-[1100px]:grid-cols-2 max-[1100px]:divide-y">
+        <dl className="grid grid-cols-4 mt-9 bg-white border border-g-line rounded-2xl shadow-[0_1px_2px_rgba(60,64,67,.06)] divide-x divide-g-line overflow-hidden max-[1100px]:grid-cols-2 max-[1100px]:divide-y">
           {[
             [
               savedCount,
@@ -137,23 +145,25 @@ export function Overview(p: LibProps) {
             [placed, translate('library:autoCollected'), 'text-g-blue'],
             [failedCount, translate('library:needsAttention'), 'text-g-warn'],
           ].map(([n, l, c]) => (
-            <div key={l as string} className="px-5 py-4">
-              <dd className={`font-serif text-[32px] leading-none tabular-nums ${c}`}>{n}</dd>
-              <dt className="text-[12.5px] text-g-sub mt-2">{l}</dt>
+            <div key={l as string} className="px-6 py-5">
+              <dd className={`font-serif text-[36px] leading-none tabular-nums ${c}`}>{n}</dd>
+              <dt className="text-[12.5px] text-g-sub mt-2.5">{l}</dt>
             </div>
           ))}
         </dl>
 
-        <div className="mt-10">
+        <div className="mt-12">
           <Timeline days={data?.days} arts={arts} range={range} setRange={setRange} />
         </div>
 
-        <div className="grid grid-cols-[1.35fr_1fr] gap-10 mt-10 max-[1100px]:grid-cols-1">
+        <div className="grid grid-cols-[1.35fr_1fr] gap-12 mt-12 items-start max-[1100px]:grid-cols-1">
           <section>
             <Label>{translate('library:recentActivity')}</Label>
             {groups.length === 0 && (
               <p className="text-[13px] text-g-sub border-t border-g-line pt-3">
-                {translate('library:noNewActivityInTryAWiderTime', { range: scope })}
+                {translate('library:noNewActivityInTryAWiderTime', {
+                  range: scope,
+                })}
               </p>
             )}
             {groups.map((g) => (
@@ -192,11 +202,11 @@ export function Overview(p: LibProps) {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {failed.map((a) => (
+                  {shownFailed.map((a) => (
                     <button
                       key={a.id}
                       onClick={() => open(a.id)}
-                      className="w-full text-left rounded-xl bg-g-warn-bg border border-g-warn-line p-4 hover:shadow-sm transition"
+                      className="w-full text-left rounded-xl bg-g-warn-bg border border-g-warn-line border-l-[3px] border-l-g-amber px-4 py-3.5 hover:shadow-sm hover:-translate-y-px transition"
                     >
                       <div className="text-[12px] font-medium text-g-warn-ink">
                         {a.site?.status === 'dead'
@@ -208,8 +218,8 @@ export function Overview(p: LibProps) {
                               : translate('library:contentUnavailable')}
                       </div>
                       <ClassificationStatus article={a} />
-                      <div className="font-serif text-[15px] font-medium mt-1 leading-snug">{a.title}</div>
-                      <div className="text-[12.5px] text-g-sub mt-2 leading-relaxed">
+                      <div className="font-serif text-[15px] font-medium mt-1 leading-snug line-clamp-2">{a.title}</div>
+                      <div className="text-[12.5px] text-g-sub mt-1.5 leading-relaxed">
                         {a.site?.status === 'dead'
                           ? translate('library:unavailableInRecentChecks')
                           : a.sourceAvailable
@@ -218,6 +228,19 @@ export function Overview(p: LibProps) {
                       </div>
                     </button>
                   ))}
+                  {failed.length > 4 && (
+                    <button
+                      onClick={() => setShowAllFailed((v) => !v)}
+                      aria-expanded={showAllFailed}
+                      className="w-full h-9 rounded-full border border-g-line bg-white text-[12.5px] font-medium text-g-blue hover:bg-g-tint transition"
+                    >
+                      {showAllFailed
+                        ? translate('library:showLess')
+                        : translate('library:showAllCount', {
+                            count: failed.length,
+                          })}
+                    </button>
+                  )}
                 </div>
               )}
             </section>
@@ -238,10 +261,13 @@ export function Overview(p: LibProps) {
                         {range !== 'all' && inR > 0 && (
                           <span className="text-[12px] text-g-ok font-medium tabular-nums">+{inR}</span>
                         )}
-                        <div className="w-16 h-1 rounded-full bg-g-surface overflow-hidden">
+                        <div className="w-20 h-1.5 rounded-full bg-g-surface overflow-hidden">
                           <div
                             className="h-full"
-                            style={{ width: Math.min(100, n * 40) + '%', background: colDot(cols, c.id) }}
+                            style={{
+                              width: Math.max(6, (n / maxCount) * 100) + '%',
+                              background: colDot(cols, c.id),
+                            }}
                           />
                         </div>
                         <span className="text-[12.5px] tabular-nums text-g-sub w-5 text-right">{n}</span>

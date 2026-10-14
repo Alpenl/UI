@@ -59,42 +59,50 @@ export function SettingsWorkspace({
   } = model
   return (
     <div className="h-full flex flex-col">
-      <div className="shrink-0 px-6 pt-5 border-b border-g-line">
-        <h1 className="text-[22px] font-semibold">{translate('app:settings')}</h1>
-        <div role="tablist" className="flex gap-1 mt-3">
-          {(
-            [
-              ['status', translate('app:statusAccount')],
-              ['col', translate('app:collectionsTab')],
-              ['tag', translate('app:tagLibrary')],
-            ] as const
-          ).map(([t, l]) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={setTab === t}
-              onClick={() => setSetTab(t)}
-              className={`h-9 px-4 text-[14px] border-b-2 -mb-px transition ${setTab === t ? 'border-g-blue text-g-blue-dark font-medium' : 'border-transparent text-g-sub hover:text-g-text'}`}
-            >
-              {l}
-            </button>
-          ))}
+      <div className="shrink-0 border-b border-g-line bg-white">
+        <div className="max-w-4xl mx-auto px-8 pt-6">
+          <h1 className="text-[22px] font-semibold">{translate('app:settings')}</h1>
+          <div role="tablist" className="flex gap-6 mt-4">
+            {(
+              [
+                ['status', translate('app:statusAccount')],
+                ['col', translate('app:collectionsTab')],
+                ['tag', translate('app:tagLibrary')],
+              ] as const
+            ).map(([t, l]) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={setTab === t}
+                onClick={() => setSetTab(t)}
+                className={`h-10 text-[14px] border-b-2 -mb-px transition ${setTab === t ? 'border-g-blue text-g-blue-dark font-medium' : 'border-transparent text-g-sub hover:text-g-text'}`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         {setTab === 'status' && (LIVE ? <LiveSettings /> : <Settings online={online} setOnline={setOnline} />)}
         {setTab === 'col' && (
           <div className="h-full flex flex-col">
-            <div role="group" aria-label={translate('app:collectionType')} className="shrink-0 px-6 pt-4">
-              <div className="flex rounded-full bg-g-surface p-0.5 text-[13px]">
+            <div
+              role="group"
+              aria-label={translate('app:collectionType')}
+              className="shrink-0 max-w-4xl w-full mx-auto px-8 pt-6"
+            >
+              <div className="inline-flex rounded-md border border-g-line bg-white p-0.5 text-[13px]">
                 {(Object.keys(KINDS) as Kind[]).map((k) => (
                   <button
                     key={k}
                     onClick={() => setHubKind(k)}
                     aria-pressed={hubKind === k}
-                    className={`px-4 h-7 rounded-full ${hubKind === k ? 'bg-white shadow-sm font-medium' : 'text-g-sub'}`}
+                    className={`px-4 h-7 rounded-[3px] transition ${hubKind === k ? 'bg-g-text text-white font-medium' : 'text-g-sub hover:text-g-text'}`}
                   >
-                    {translate('app:collectionsByKind', { kind: KINDS[k].label })}
+                    {translate('app:collectionsByKind', {
+                      kind: KINDS[k].label,
+                    })}
                   </button>
                 ))}
               </div>
@@ -120,7 +128,18 @@ export function SettingsWorkspace({
         {setTab === 'tag' && (
           <MutationBoundary>
             <TagLibrary
-              {...{ tags, setTags, arts, renameTag, dims, addDim, renameDim, recolorDim, deleteDim, deleteTags }}
+              {...{
+                tags,
+                setTags,
+                arts,
+                renameTag,
+                dims,
+                addDim,
+                renameDim,
+                recolorDim,
+                deleteDim,
+                deleteTags,
+              }}
             />
           </MutationBoundary>
         )}

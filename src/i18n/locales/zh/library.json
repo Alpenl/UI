@@ -50,6 +50,8 @@
   "latestArticle": "最新一篇 →",
   "needsAttentionCount": "待处理 {{count}}",
   "jumpTo": "快速跳转",
+  "showAllCount": "查看全部 {{count}} 项",
+  "showLess": "收起",
   "summariesTagsAndCollectionsAreReadyTheList": "摘要、标签与合集均已自动生效。左侧列表已按所选时间范围筛选。",
   "organized": "{{range}}整理了 {{count}} {{unit}}{{kind}}",
   "savedHeading": "已收录 {{count}} {{unit}}{{kind}}",

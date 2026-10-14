@@ -28,7 +28,7 @@ export function DimNameEdit({
         onKeyDown={(e) => (e.key === 'Enter' ? go() : e.key === 'Escape' && cancel())}
         aria-label={translate('admin:typeName')}
         aria-invalid={!!err}
-        className={`h-8 w-36 px-3 rounded-full border bg-white text-[13px] outline-none ${err ? 'border-g-red' : 'border-g-blue'}`}
+        className={`h-8 w-36 px-3 rounded-[4px] border bg-white text-[13px] outline-none ${err ? 'border-g-red' : 'border-g-blue'}`}
       />
       <Btn kind="primary" onClick={go}>
         {translate('admin:save')}

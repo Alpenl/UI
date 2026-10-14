@@ -26,7 +26,7 @@ export function ArticleContent({ article }: { article: Article }) {
   }
   return (
     <>
-      <div className="reader-content mt-8 font-serif text-[17.5px] leading-[1.95] space-y-5 text-[#222] break-words">
+      <div className="reader-content mt-10 font-serif text-[17.5px] leading-[1.95] space-y-5 text-[#222] break-words">
         <Markdown
           remarkPlugins={[remarkGfm]}
           skipHtml
@@ -39,7 +39,12 @@ export function ArticleContent({ article }: { article: Article }) {
                 <span className="text-g-sub">{t('library:imageUnavailable')}</span>
               ),
             a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noreferrer" className="text-g-blue underline">
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="text-g-blue underline underline-offset-[3px] decoration-g-blue/40 hover:decoration-g-blue"
+              >
                 {children}
               </a>
             ),

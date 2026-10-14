@@ -4,6 +4,7 @@
 
 - 最初设计来源：[alpen-yy/newUI](https://github.com/alpen-yy/newUI)，基线 `74746901283006639dd2e815d16b151beb626803`。
 - 本次界面同步：[Alpenl/cairn-ui](https://github.com/Alpenl/cairn-ui)，已上线提交 `293e978d9e4110e05b6cc997d972e1e5af4dd03c`。
+- 最新视觉更新：用户提供的 `project/`（2026-10-14），同步首页、阅读器、设置、标签与合集管理样式。
 - 本仓库：[Alpenl/UI](https://github.com/Alpenl/UI)。后续设计修改在这里进行，生产工程单独评审同步。
 
 ## 运行

@@ -93,13 +93,13 @@ export function Collections({
 
   return (
     <div className="h-full overflow-y-auto scroll-quiet">
-      <div className="max-w-4xl mx-auto px-8 py-10">
+      <div className="max-w-4xl mx-auto px-8 pt-6 pb-20">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-normal">
+            <h1 className="text-[30px] font-semibold leading-tight">
               {translate('app:collectionsByKind', { kind: KINDS[kind].label })}
             </h1>
-            <p className="text-[14px] text-g-sub mt-1">
+            <p className="text-[14px] text-g-sub mt-2 max-w-[56ch] leading-relaxed">
               {translate('admin:setAPurposeAndRulesNewlySavedWill', { kind: KINDS[kind].noun })}
             </p>
           </div>
@@ -111,7 +111,7 @@ export function Collections({
         </div>
 
         {creating && (
-          <div className="mt-6 rounded-2xl border border-g-line p-6 shadow-[0_1px_3px_rgba(60,64,67,.15)]">
+          <div className="mt-8 rounded-md border border-g-line bg-white p-7">
             <input
               autoFocus
               value={name}
@@ -131,7 +131,7 @@ export function Collections({
               rows={2}
               aria-label={translate('admin:purpose')}
               placeholder={translate('admin:purposeAiUsesThisToUnderstandWhatBelongs')}
-              className="w-full mt-4 text-[14px] border border-g-line rounded-xl p-3 resize-none focus:border-g-blue outline-none"
+              className="w-full mt-5 text-[14px] border border-g-line bg-white rounded-md p-3 resize-none focus:border-g-text outline-none transition"
             />
             {!structured && <RulePicker {...{ tags, rule, mode, setRule, setMode }} />}
             {structured && <p className="mt-3 text-[13px] text-g-sub">{translate('admin:configureAfterCreate')}</p>}
@@ -159,7 +159,7 @@ export function Collections({
           </div>
         )}
 
-        <div role="tablist" className="mt-8 flex gap-1 border-b border-g-line">
+        <div role="tablist" className="mt-8 inline-flex gap-0.5 rounded-md border border-g-line bg-white p-0.5">
           {[false, true].map((v) => (
             <button
               key={String(v)}
@@ -168,7 +168,7 @@ export function Collections({
               onClick={() => {
                 setStatus(v ? 'archived' : 'active')
               }}
-              className={`h-10 px-4 text-[14px] font-medium border-b-2 -mb-px ${status === (v ? 'archived' : 'active') ? 'border-g-blue text-g-blue-dark' : 'border-transparent text-g-sub'}`}
+              className={`h-7 px-4 rounded-[3px] text-[13px] transition ${status === (v ? 'archived' : 'active') ? 'bg-g-text text-white font-medium' : 'text-g-sub hover:text-g-text'}`}
             >
               {v ? translate('admin:archived') : translate('admin:active')}
             </button>
@@ -178,21 +178,21 @@ export function Collections({
               role="tab"
               aria-selected={status === 'deleted'}
               onClick={() => setStatus('deleted')}
-              className={`h-10 px-4 text-[14px] border-b-2 ${status === 'deleted' ? 'border-g-blue text-g-blue-dark' : 'border-transparent text-g-sub'}`}
+              className={`h-7 px-4 rounded-[3px] text-[13px] transition ${status === 'deleted' ? 'bg-g-text text-white font-medium' : 'text-g-sub hover:text-g-text'}`}
             >
               {translate('admin:deleted')}
             </button>
           )}
         </div>
 
-        <ul className="divide-y divide-g-line">
+        <ul className="mt-5 rounded-md border border-g-line bg-white divide-y divide-g-line">
           {list.length === 0 && (
-            <li className="py-12 text-center text-[14px] text-g-sub">{translate('admin:noCollectionsHereYet')}</li>
+            <li className="py-16 text-center text-[14px] text-g-sub">{translate('admin:noCollectionsHereYet')}</li>
           )}
           {list.map((c) => {
             const isEditing = editing === c.id
             return (
-              <li key={c.id} className="py-5 group">
+              <li key={c.id} className="group px-6 py-5 transition hover:bg-g-paper/70">
                 <div className="flex items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -206,10 +206,10 @@ export function Collections({
                           className="text-[18px] font-medium border-b border-g-blue outline-none"
                         />
                       ) : (
-                        <h2 className="text-[18px] font-medium">{c.name}</h2>
+                        <h2 className="font-serif text-[19px] font-medium">{c.name}</h2>
                       )}
                       {c.pinned && <Icon d={P.pin} className="w-4 h-4 text-g-blue" />}
-                      <span className="text-[13px] text-g-sub">
+                      <span className="text-[12px] text-g-sub tabular-nums rounded-[3px] bg-g-surface px-1.5 py-0.5">
                         {count(c)} {KINDS[kind].unit}
                       </span>
                     </div>
@@ -276,7 +276,7 @@ export function Collections({
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[14px] text-g-sub mt-1 leading-relaxed">{c.purpose}</p>
+                      <p className="text-[14px] text-g-sub mt-1.5 leading-relaxed">{c.purpose}</p>
                     )}
                     <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                       {c.rule.length > 0 ? (
@@ -321,7 +321,7 @@ export function Collections({
                       </Btn>
                     </div>
                   ) : (
-                    <div className="flex gap-0.5 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition">
+                    <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 focus-within:opacity-100 transition">
                       {[
                         [
                           P.pin,
@@ -341,7 +341,7 @@ export function Collections({
                           title={t as string}
                           aria-label={t as string}
                           onClick={f as () => void}
-                          className="w-9 h-9 grid place-items-center rounded-full text-g-sub hover:bg-g-surface"
+                          className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface hover:text-g-text"
                         >
                           <Icon d={d as string} className="w-[18px] h-[18px]" />
                         </button>
@@ -354,7 +354,7 @@ export function Collections({
             )
           })}
         </ul>
-        <p className="text-[12px] text-g-sub mt-4">
+        <p className="text-[12px] text-g-sub mt-6 text-center">
           {translate('admin:deletingACollectionRemovesMembershipOnlySavedContent')}
         </p>
       </div>

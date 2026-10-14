@@ -24,14 +24,14 @@ export function RulePicker({
         <div
           role="group"
           aria-label={translate('admin:ruleMatching')}
-          className="flex rounded-full border border-g-line text-[12px] overflow-hidden"
+          className="flex rounded-md border border-g-line text-[12px] overflow-hidden"
         >
           {(['any', 'all'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               aria-pressed={mode === m}
-              className={`px-3 h-6 ${mode === m ? 'bg-g-tint text-g-blue-dark font-medium' : 'text-g-sub'}`}
+              className={`px-3 h-6 ${mode === m ? 'bg-g-text text-white font-medium' : 'text-g-sub'}`}
             >
               {m === 'any' ? translate('admin:matchAny') : translate('admin:matchAll')}
             </button>
@@ -48,7 +48,7 @@ export function RulePicker({
                 key={t.name}
                 onClick={() => setRule(on ? rule.filter((r) => r !== t.name) : [...rule, t.name])}
                 aria-pressed={on}
-                className={`h-7 px-3 rounded-full text-[13px] border ${on ? 'bg-g-tint border-g-blue text-g-blue-dark' : 'border-g-line hover:bg-g-surface'}`}
+                className={`h-7 px-3 rounded-[4px] text-[13px] border transition ${on ? 'bg-g-text border-g-text text-white' : 'border-g-line hover:border-g-mute'}`}
               >
                 {t.name}
               </button>

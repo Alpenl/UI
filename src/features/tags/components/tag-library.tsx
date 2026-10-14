@@ -100,21 +100,20 @@ export function TagLibrary({
 
   return (
     <div className="h-full overflow-y-auto scroll-quiet">
-      <div className="max-w-4xl mx-auto px-8 py-10">
+      <div className="max-w-4xl mx-auto px-8 pt-8 pb-20">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-normal">{translate('app:tagLibrary')}</h1>
-            <p className="text-[14px] text-g-sub mt-1">{translate('admin:articlesAndWebsitesShareTheSameTagsAdd')}</p>
+            <h1 className="text-[30px] font-semibold leading-tight">{translate('app:tagLibrary')}</h1>
+            <p className="text-[14px] text-g-sub mt-2 max-w-[56ch] leading-relaxed">
+              {translate('admin:articlesAndWebsitesShareTheSameTagsAdd')}
+            </p>
           </div>
           <Btn kind="primary" onClick={add} disabled={!cur}>
             <Icon d={P.plus} className="w-4 h-4" /> {translate('admin:addTag')}
           </Btn>
         </div>
 
-        <div
-          role="tablist"
-          className="mt-8 flex items-center gap-1 border-b border-g-line overflow-x-auto scroll-quiet"
-        >
+        <div role="tablist" className="mt-8 flex flex-wrap items-center gap-1.5">
           {dims.map((d) => (
             <button
               key={d.id}
@@ -127,9 +126,12 @@ export function TagLibrary({
                 setEditDim(null)
                 setDimConfirm(null)
               }}
-              className={`h-10 px-4 text-[14px] font-medium border-b-2 -mb-px whitespace-nowrap ${dim === d.id ? 'border-g-blue text-g-blue-dark' : 'border-transparent text-g-sub hover:text-g-text'}`}
+              className={`h-8 px-3.5 rounded-[4px] text-[13px] font-medium whitespace-nowrap border transition ${dim === d.id ? 'bg-g-text border-g-text text-white' : 'border-g-line bg-white text-g-ink hover:border-g-mute'}`}
             >
-              {d.label} <span className="text-g-sub font-normal ml-1">{tags.filter((t) => t.dim === d.id).length}</span>
+              {d.label}{' '}
+              <span className={`font-normal ml-1 tabular-nums ${dim === d.id ? 'text-white/60' : 'text-g-sub'}`}>
+                {tags.filter((t) => t.dim === d.id).length}
+              </span>
             </button>
           ))}
           {newDim === null ? (
@@ -137,7 +139,7 @@ export function TagLibrary({
               onClick={() => setNewDim('')}
               aria-label={translate('admin:addTagType')}
               title={translate('admin:addTagType')}
-              className="ml-1 h-8 px-3 mb-0.5 rounded-full text-[13px] text-g-blue hover:bg-g-tint inline-flex items-center gap-1 whitespace-nowrap"
+              className="h-8 px-3 rounded-[4px] text-[13px] text-g-blue hover:bg-g-tint inline-flex items-center gap-1 whitespace-nowrap"
             >
               <Icon d={P.plus} className="w-4 h-4" /> {translate('admin:addType')}
             </button>
@@ -161,7 +163,7 @@ export function TagLibrary({
                 placeholder={translate('admin:typeNameEGDifficulty')}
                 aria-label={translate('admin:newTypeName')}
                 aria-invalid={!!dimErr}
-                className={`h-8 w-40 px-3 rounded-full border bg-white text-[13px] outline-none ${dimErr ? 'border-g-red' : 'border-g-blue'}`}
+                className={`h-8 w-40 px-3 rounded-[4px] border bg-white text-[13px] outline-none ${dimErr ? 'border-g-red' : 'border-g-blue'}`}
               />
               <Btn kind="primary" onClick={submitDim}>
                 {translate('library:add')}
@@ -170,7 +172,7 @@ export function TagLibrary({
                 type="button"
                 onClick={() => (setNewDim(null), setDimErr(''))}
                 aria-label={translate('admin:cancel')}
-                className="w-8 h-8 grid place-items-center rounded-full text-g-sub hover:bg-g-surface"
+                className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface"
               >
                 <Icon d={P.x} className="w-4 h-4" />
               </button>
@@ -198,7 +200,7 @@ export function TagLibrary({
                     <button
                       aria-label={translate('admin:deleteNamedType', { name: d.label })}
                       onClick={() => setArchivedDelete(archivedDelete === d.id ? null : d.id)}
-                      className="w-8 h-8 grid place-items-center rounded-full text-g-sub hover:text-g-red hover:bg-g-danger-bg"
+                      className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:text-g-red hover:bg-g-danger-bg"
                     >
                       <Icon d={P.trash} className="w-4 h-4" />
                     </button>
@@ -231,7 +233,7 @@ export function TagLibrary({
         )}
 
         {cur && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 px-2 text-[13px]">
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-g-line bg-white px-4 py-3 text-[13px]">
             {editDim === cur.id ? (
               <DimNameEdit
                 key={cur.id}
@@ -380,17 +382,17 @@ export function TagLibrary({
           </p>
         )}
 
-        <div className="grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-2 h-10 items-center text-[12px] text-g-sub">
+        <div className="mt-5 rounded-t-md border border-b-0 border-g-line bg-g-paper grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-4 h-10 items-center text-[12px] text-g-sub tracking-wide">
           <span>{translate('sites:name')}</span>
           <span className="max-[700px]:hidden">{translate('admin:usage')}</span>
           <span className="max-[700px]:hidden">{translate('admin:assignment')}</span>
           <span />
         </div>
-        <ul className="border-t border-g-line divide-y divide-g-line">
+        <ul className="rounded-b-md border border-g-line bg-white overflow-hidden divide-y divide-g-line">
           {list.map((t) => (
             <li key={t.ref ?? t.name}>
               <div
-                className={`grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-2 min-h-12 items-center hover:bg-g-surface/70 ${!t.enabled ? 'opacity-50' : ''}`}
+                className={`grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-4 min-h-14 items-center hover:bg-g-paper transition ${!t.enabled ? 'opacity-50' : ''}`}
               >
                 <div className="min-w-0 flex flex-wrap items-center gap-2 py-2">
                   <Chip dim={t.dim}>{t.name}</Chip>
@@ -417,7 +419,7 @@ export function TagLibrary({
                     onClick={() => setOpen(open === t.name ? null : t.name)}
                     aria-label={translate('admin:editTag', { name: t.name })}
                     aria-expanded={open === t.name}
-                    className="w-8 h-8 grid place-items-center rounded-full text-g-sub hover:bg-g-surface"
+                    className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface"
                   >
                     <Icon d={P.edit} className="w-4 h-4" />
                   </button>
@@ -425,7 +427,7 @@ export function TagLibrary({
                     onClick={() => setTagConfirm(tagConfirm === t.name ? null : t.name)}
                     aria-label={translate('admin:deleteTag', { name: t.name })}
                     aria-expanded={tagConfirm === t.name}
-                    className="w-8 h-8 grid place-items-center rounded-full text-g-sub hover:text-g-red hover:bg-g-danger-bg"
+                    className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:text-g-red hover:bg-g-danger-bg"
                   >
                     <Icon d={P.trash} className="w-4 h-4" />
                   </button>
@@ -458,7 +460,7 @@ export function TagLibrary({
                 </div>
               )}
               {open === t.name && (
-                <div className="bg-g-surface/60 px-5 py-5 grid gap-4 [&>*]:min-w-0 grid-cols-2 max-[1000px]:grid-cols-1">
+                <div className="bg-g-paper border-t border-g-line px-6 py-6 grid gap-4 [&>*]:min-w-0 grid-cols-2 max-[1000px]:grid-cols-1">
                   {LIVE &&
                     liveStore.getSnapshot().data.relationsVersion === 1 &&
                     liveStore.getSnapshot().data.structureEditable !== false &&
@@ -509,7 +511,7 @@ export function TagLibrary({
                         patch(t.name, { dim: e.target.value })
                         if (!basisEnabled) setOpen(null)
                       }}
-                      className="mt-1 w-full h-10 px-3 rounded-lg border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
+                      className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
                     >
                       {dims
                         .filter((d) => !LIVE || !t.ref?.startsWith('custom/') || customType(d.id) || d.id === 'custom')
@@ -526,7 +528,7 @@ export function TagLibrary({
                       value={t.aliases}
                       onChange={(e) => patch(t.name, { aliases: e.target.value })}
                       placeholder={translate('admin:eGLowRankAdaptation')}
-                      className="mt-1 w-full h-10 px-3 rounded-lg border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
+                      className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
                     />
                   </label>
                   {basisEnabled ? (
@@ -629,10 +631,10 @@ export function TagLibrary({
             </li>
           ))}
           {cur && list.length === 0 && (
-            <li className="py-12 text-center text-[14px] text-g-sub">{translate('admin:noTagsInThisTypeYet')}</li>
+            <li className="py-16 text-center text-[14px] text-g-sub">{translate('admin:noTagsInThisTypeYet')}</li>
           )}
         </ul>
-        <p className="text-[12px] text-g-sub mt-4">
+        <p className="text-[12px] text-g-sub mt-5 text-center">
           {translate(
             basisEnabled ? 'admin:lifecycleHint' : 'admin:disablingStopsNewAutomaticAssignmentsExistingTagsAre',
           )}

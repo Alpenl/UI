@@ -50,6 +50,8 @@
   "latestArticle": "Latest article →",
   "needsAttentionCount": "Needs attention {{count}}",
   "jumpTo": "Jump to",
+  "showAllCount": "Show all {{count}}",
+  "showLess": "Show less",
   "summariesTagsAndCollectionsAreReadyTheList": "Summaries, tags and collections are ready. The list is filtered by the selected time range.",
   "organized": "{{range}}: {{count}} {{kind}} organized",
   "savedHeading": "{{count}} {{kind}} saved",
