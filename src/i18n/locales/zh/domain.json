@@ -1,0 +1,18 @@
+{
+  "lastMonth": "近一月",
+  "last7Days": "近七天",
+  "last3Days": "近三天",
+  "today": "今天",
+  "websites": "网站",
+  "items": "个",
+  "articles": "文章",
+  "articleUnit": "篇",
+  "englishTranslated": "英文 · 已译",
+  "chinese": "中文",
+  "english": "英文",
+  "unknownLanguage": "—",
+  "free": "免费",
+  "freemium": "免费增值",
+  "paid": "付费",
+  "checkedToday": "今天 {{time}}"
+}

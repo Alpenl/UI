@@ -1,0 +1,199 @@
+.cairn-player {
+  --media-primary-color: #fff;
+  --media-secondary-color: transparent;
+  --media-control-background: transparent;
+  --media-control-hover-background: rgb(255 255 255 / 15%);
+  --media-control-padding: 8px;
+  --media-button-icon-width: 22px;
+  --media-button-icon-height: 22px;
+  --media-font-family: var(--font-sans);
+  --media-font-size: 13px;
+  --media-text-content-height: 22px;
+  --media-range-track-height: 3px;
+  --media-range-track-background: rgb(255 255 255 / 30%);
+  --media-time-range-buffered-color: rgb(255 255 255 / 45%);
+  --media-range-thumb-width: 9px;
+  --media-range-thumb-height: 9px;
+  --media-range-thumb-opacity: 0;
+  --media-loading-indicator-icon-height: 48px;
+  --media-control-transition-out: opacity 200ms ease;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  color: #fff;
+  isolation: isolate;
+  container-type: inline-size;
+}
+
+.cairn-player:not([audio]) {
+  /* Limit portrait height by reducing width, never by cropping or letterboxing. */
+  width: min(100%, 80dvh * var(--video-ratio, 2));
+  min-width: min(100%, 240px);
+  aspect-ratio: var(--video-ratio, auto);
+  margin-inline: auto;
+}
+
+.cairn-player:not([audio])[data-ready='false'] {
+  min-height: 200px;
+  background: var(--color-g-surface);
+}
+
+.cairn-player video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cairn-player[data-ready='false'] video {
+  visibility: hidden;
+}
+
+.cairn-player-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-g-sub);
+  line-height: 1.5;
+}
+
+.cairn-player-controls {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 24px 8px 4px;
+  background: linear-gradient(transparent, rgb(0 0 0 / 30%) 35%, rgb(0 0 0 / 72%));
+}
+
+.cairn-player media-time-range {
+  padding: 10px 4px;
+  display: block;
+  width: 100%;
+  --media-range-padding: 10px 4px;
+}
+
+.cairn-player media-time-range:is(:hover, :focus-within) {
+  --media-range-thumb-opacity: 1;
+}
+
+.cairn-player media-control-bar {
+  display: flex;
+  align-items: center;
+  background: transparent;
+}
+
+.cairn-player media-control-bar > :not(.cairn-player-spacer) {
+  flex-shrink: 0;
+}
+
+.cairn-player media-control-bar > [role='button'] {
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.cairn-player-spacer {
+  flex: 1;
+}
+
+.cairn-player media-time-display {
+  padding: 8px 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cairn-player media-playback-rate-menu-button {
+  min-width: 0;
+  --media-button-padding: 8px;
+}
+
+.cairn-player media-playback-rate-menu-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+}
+
+.cairn-player media-playback-rate-menu {
+  --media-menu-background: rgb(20 20 20 / 94%);
+  --media-menu-border-radius: 10px;
+  --media-menu-item-checked-background: rgb(255 255 255 / 15%);
+  margin: 0 8px 8px;
+  max-height: calc(100% - 78px);
+  overflow-y: auto;
+  z-index: 2;
+}
+
+.cairn-player-start {
+  padding: 14px;
+  --media-button-icon-width: 36px;
+  --media-button-icon-height: 36px;
+  --media-control-padding: 14px;
+  --media-control-background: rgb(0 0 0 / 50%);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+}
+
+.cairn-player[mediahasplayed] .cairn-player-start,
+.cairn-player[data-ready='false'] .cairn-player-start,
+.cairn-player[data-ready='false'] .cairn-player-controls,
+.cairn-player[data-failed='true'] .cairn-player-start,
+.cairn-player[data-failed='true'] .cairn-player-controls {
+  display: none;
+}
+
+.cairn-player .cairn-player-error {
+  padding: 24px;
+  color: #fff;
+  background: rgb(0 0 0 / 80%);
+  text-align: center;
+  line-height: 1.6;
+  opacity: 1;
+}
+
+.cairn-player[data-failed='true'] {
+  min-height: 160px;
+}
+
+.cairn-player .cairn-player-controls:has(:focus-visible) {
+  opacity: 1;
+}
+
+.cairn-player[audio] {
+  border-radius: 12px;
+  background: #202124;
+}
+
+.cairn-player[audio] .cairn-player-controls {
+  padding-top: 4px;
+  background: transparent;
+}
+
+.cairn-player:fullscreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
+@container (max-width: 320px) {
+  .cairn-player media-pip-button {
+    display: none;
+  }
+
+  .cairn-player media-control-bar > [role='button'] {
+    padding: 6px;
+  }
+
+  .cairn-player media-control-bar {
+    --media-control-padding: 6px;
+    --media-button-padding: 6px;
+    --media-button-icon-width: 20px;
+    --media-button-icon-height: 20px;
+    --media-font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cairn-player {
+    --media-control-transition-in: none;
+    --media-control-transition-out: none;
+  }
+}

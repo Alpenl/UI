@@ -1,0 +1,18 @@
+{
+  "lastMonth": "Last month",
+  "last7Days": "Last 7 days",
+  "last3Days": "Last 3 days",
+  "today": "Today",
+  "websites": "Websites",
+  "items": "items",
+  "articles": "Articles",
+  "articleUnit": "articles",
+  "englishTranslated": "English · Translated",
+  "chinese": "Chinese",
+  "english": "English",
+  "unknownLanguage": "—",
+  "free": "Free",
+  "freemium": "Freemium",
+  "paid": "Paid",
+  "checkedToday": "Today {{time}}"
+}

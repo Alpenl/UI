@@ -1,0 +1,24 @@
+name: cairn-ui
+services:
+  ui:
+    image: ${CAIRN_UI_IMAGE:?Set the release image}
+    container_name: cairn-ui
+    restart: unless-stopped
+    ports:
+      - '8089:8080'
+    environment:
+      CAIRN_BACKEND_URL: http://192.168.110.200:8088
+      CAIRN_WORKER_URL: https://share.alpenl.com
+      CAIRN_WORKER_TOKEN: ${CAIRN_WORKER_TOKEN:?Set the server-only Worker token}
+      APP_REVISION: ${APP_REVISION:?Set the source revision}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'

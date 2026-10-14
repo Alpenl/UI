@@ -1,0 +1,6 @@
+*
+!dist/
+!dist/**
+!deploy/
+!deploy/server.mjs
+!deploy/Dockerfile

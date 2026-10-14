@@ -1,0 +1,185 @@
+@import './fonts.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-g-blue: #0b57d0;
+  --color-g-blue-dark: #0842a0;
+  --color-g-tint: #e8eef7;
+  --color-g-text: #1f1f1f;
+  --color-g-ink: #3c4043;
+  --color-g-sub: #5e6165;
+  --color-g-mute: #9aa0a6;
+  --color-g-line: #e1e3e6;
+  --color-g-surface: #f0f4f9;
+  --color-g-paper: #f8fafd;
+  --color-g-green: #1e6b3a;
+  --color-g-ok: #34a853;
+  --color-g-red: #b3261e;
+  --color-g-danger-bg: #fce8e6;
+  --color-g-danger-ink: #7a1b15;
+  --color-g-amber: #f9ab00;
+  --color-g-warn: #b06000;
+  --color-g-warn-ink: #8a5a00;
+  --color-g-warn-bg: #fdf6e7;
+  --color-g-warn-line: #f1dfb3;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100dvh;
+}
+
+.scroll-quiet {
+  overscroll-behavior: contain;
+}
+
+.reader-content :is(ul, ol) {
+  padding-left: 1.5em;
+}
+.reader-content ul {
+  list-style: disc;
+}
+.reader-content ol {
+  list-style: decimal;
+}
+.reader-content :is(h2, h3, h4) {
+  font-weight: 600;
+}
+.reader-content blockquote {
+  border-left: 2px solid var(--color-g-line);
+  padding-left: 1em;
+}
+.reader-content pre {
+  overflow-x: auto;
+  padding: 1em;
+  background: var(--color-g-paper);
+  font-size: 0.8em;
+}
+.reader-content :is(th, td) {
+  border: 1px solid var(--color-g-line);
+  padding: 0.3em 0.6em;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-g-text);
+  background: var(--color-g-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: #c7d9f5;
+}
+
+.scroll-quiet {
+  scrollbar-width: none;
+}
+.scroll-quiet::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid #0b57d0;
+  outline-offset: 2px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.slide-in {
+  animation: slide-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .slide-in {
+    animation: none;
+  }
+}
+
+/* Semantic shadcn slots map to the pinned Cairn palette. */
+:root {
+  --background: #fff;
+  --foreground: var(--color-g-text);
+  --card: #fff;
+  --card-foreground: var(--color-g-text);
+  --popover: #fff;
+  --popover-foreground: var(--color-g-text);
+  --primary: var(--color-g-blue);
+  --primary-foreground: #fff;
+  --secondary: var(--color-g-surface);
+  --secondary-foreground: var(--color-g-ink);
+  --muted: var(--color-g-surface);
+  --muted-foreground: var(--color-g-sub);
+  --accent: var(--color-g-tint);
+  --accent-foreground: var(--color-g-blue-dark);
+  --destructive: var(--color-g-red);
+  --border: var(--color-g-line);
+  --input: var(--color-g-line);
+  --ring: var(--color-g-blue);
+  --radius: 0.5rem;
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
