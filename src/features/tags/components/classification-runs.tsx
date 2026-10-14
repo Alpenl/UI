@@ -1,3 +1,4 @@
+import { TagPicker } from '@/components/domain/tag-cloud'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -158,25 +159,18 @@ function PlanBuilder({ dimension, onStarted }: { dimension: string; onStarted: (
     <div className="space-y-3">
       <h2 className="font-medium">{t('admin:scopedClassification')}</h2>
       <p className="text-g-sub">{t('admin:scopeUnionHint')}</p>
-      <label className="block">
-        {t('admin:classificationTarget')}{' '}
-        <select
-          className="border border-g-line rounded-lg p-2 max-w-full"
+      <div>
+        <p className="mb-2">{t('admin:classificationTarget')}</p>
+        <TagPicker
+          label={t('admin:classificationTarget')}
+          noneLabel={`${data.dims?.find((d) => d.id === dimension)?.label ?? dimension} · ${t('admin:wholeType')}`}
           value={target}
-          onChange={(e) => setTarget(e.target.value)}
-        >
-          <option value="">
-            {data.dims?.find((d) => d.id === dimension)?.label ?? dimension} · {t('admin:wholeType')}
-          </option>
-          {tags
-            .filter((tag) => tag.enabled && tag.auto)
-            .map((tag) => (
-              <option key={tag.ref} value={tag.ref}>
-                {tag.name}
-              </option>
-            ))}
-        </select>
-      </label>
+          onChange={setTarget}
+          tags={tags
+            .filter((tag) => tag.enabled && tag.auto && tag.ref)
+            .map((tag) => ({ id: tag.ref!, label: tag.name, dim: tag.dim }))}
+        />
+      </div>
       <div className="flex flex-wrap gap-4">
         <label>
           <input type="checkbox" checked={related} onChange={(e) => setRelated(e.target.checked)} />{' '}

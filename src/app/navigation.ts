@@ -17,7 +17,7 @@ const emptyFilter = filterSchema.parse({})
 export const navigationSchema = z.object({
   matchMode: z.enum(['any', 'all']).catch('any'),
   collectionKind: z.enum(['article', 'site']).catch('article'),
-  view: z.enum(['lib', 'set']).catch('lib'),
+  view: z.enum(['lib', 'set', 'trash']).catch('lib'),
   kind: z.enum(['article', 'site']).catch('article'),
   tab: z.enum(['status', 'col', 'tag']).catch('status'),
   filters: z

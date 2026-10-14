@@ -10,6 +10,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { DIM_PALETTE, KINDS, type Article, type Dim, type DimDef, type Kind, type Tag } from '@/domain/library'
 
 import { Chip } from '@/components/domain/tag-chip'
+import { TagCloud } from '@/components/domain/tag-cloud'
 import { Btn } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import { P } from '@/components/ui/icons'
@@ -58,6 +59,14 @@ export function TagLibrary({
   const [editDim, setEditDim] = useState<string | null>(null)
   const [dimConfirm, setDimConfirm] = useState<'archive' | 'delete' | null>(null)
   const [tagConfirm, setTagConfirm] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [picked, setPicked] = useState<Set<string>>(() => new Set())
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const stopPicking = () => {
+    setPicking(false)
+    setPicked(new Set())
+    setBulkConfirm(false)
+  }
   useEffect(() => {
     if (LIVE) liveStore.setEditing(!!open || !!editDim || !!basisDim || newDim !== null)
     return () => {
@@ -97,6 +106,7 @@ export function TagLibrary({
     setOpen(null)
   }
   const dimTagNames = list.map((t) => t.name)
+  const openTag = list.find((t) => t.name === open)
 
   return (
     <div className="h-full overflow-y-auto scroll-quiet">
@@ -125,6 +135,7 @@ export function TagLibrary({
                 setOpen(null)
                 setEditDim(null)
                 setDimConfirm(null)
+                stopPicking()
               }}
               className={`h-8 px-3.5 rounded-[4px] text-[13px] font-medium whitespace-nowrap border transition ${dim === d.id ? 'bg-g-text border-g-text text-white' : 'border-g-line bg-white text-g-ink hover:border-g-mute'}`}
             >
@@ -382,258 +393,355 @@ export function TagLibrary({
           </p>
         )}
 
-        <div className="mt-5 rounded-t-md border border-b-0 border-g-line bg-g-paper grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-4 h-10 items-center text-[12px] text-g-sub tracking-wide">
-          <span>{translate('sites:name')}</span>
-          <span className="max-[700px]:hidden">{translate('admin:usage')}</span>
-          <span className="max-[700px]:hidden">{translate('admin:assignment')}</span>
-          <span />
-        </div>
-        <ul className="rounded-b-md border border-g-line bg-white overflow-hidden divide-y divide-g-line">
-          {list.map((t) => (
-            <li key={t.ref ?? t.name}>
-              <div
-                className={`grid grid-cols-[minmax(0,1fr)_120px_100px_72px] max-[700px]:grid-cols-[minmax(0,1fr)_72px] px-4 min-h-14 items-center hover:bg-g-paper transition ${!t.enabled ? 'opacity-50' : ''}`}
-              >
-                <div className="min-w-0 flex flex-wrap items-center gap-2 py-2">
-                  <Chip dim={t.dim}>{t.name}</Chip>
-                  {t.aliases && (
-                    <span className="text-[12px] text-g-sub">
-                      {translate('admin:aliasesSummary', { aliases: t.aliases })}
-                    </span>
-                  )}
-                  {!t.enabled && <span className="text-[12px] text-g-red">{translate('admin:disabled')}</span>}
-                </div>
-                <span className="text-[13px] tabular-nums text-g-sub max-[700px]:hidden">
-                  {(Object.keys(KINDS) as Kind[])
-                    .map(
-                      (k) =>
-                        `${KINDS[k].label} ${LIVE ? (k === 'article' ? usage([t.name]) : 0) : arts.filter((a) => a.kind === k && a.tags.includes(t.name)).length}`,
-                    )
-                    .join(' · ')}
-                </span>
-                <span className={`text-[13px] max-[700px]:hidden ${t.auto ? 'text-g-green' : 'text-g-sub'}`}>
-                  {t.auto && cur?.auto !== false ? translate('admin:aiAssisted') : translate('admin:manualOnly')}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setOpen(open === t.name ? null : t.name)}
-                    aria-label={translate('admin:editTag', { name: t.name })}
-                    aria-expanded={open === t.name}
-                    className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface"
-                  >
-                    <Icon d={P.edit} className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setTagConfirm(tagConfirm === t.name ? null : t.name)}
-                    aria-label={translate('admin:deleteTag', { name: t.name })}
-                    aria-expanded={tagConfirm === t.name}
-                    className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:text-g-red hover:bg-g-danger-bg"
-                  >
-                    <Icon d={P.trash} className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              {tagConfirm === t.name && (
-                <div
-                  role="group"
-                  aria-label={translate('admin:deleteTag', { name: t.name })}
-                  className="flex flex-wrap items-center gap-3 px-4 py-3 text-[13px] text-g-danger-ink bg-g-danger-bg"
-                >
-                  <p className="flex-1 min-w-40">
-                    {translate(LIVE ? 'admin:deleteTagConsequences' : 'admin:removeFromResources', {
-                      count: usage([t.name]),
-                    })}
-                  </p>
-                  <Btn
-                    kind="danger"
-                    onClick={async () => {
-                      if (!(await deleteTags([t.name]))) return
-                      setTagConfirm(null)
-                      setOpen(null)
-                    }}
-                  >
-                    {translate('admin:confirmDeletion')}
-                  </Btn>
-                  <button onClick={() => setTagConfirm(null)} className="px-2 text-g-sub">
-                    {translate('admin:cancel')}
-                  </button>
-                </div>
-              )}
-              {open === t.name && (
-                <div className="bg-g-paper border-t border-g-line px-6 py-6 grid gap-4 [&>*]:min-w-0 grid-cols-2 max-[1000px]:grid-cols-1">
-                  {LIVE &&
-                    liveStore.getSnapshot().data.relationsVersion === 1 &&
-                    liveStore.getSnapshot().data.structureEditable !== false &&
-                    t.ref &&
-                    !t.ref.startsWith('draft/') && <RelationEditor key={t.ref} tagRef={t.ref} />}
-                  <NameField
-                    name={t.displayLabel ?? (t as { sourceLabel?: string }).sourceLabel ?? t.name}
-                    rename={(to) => {
-                      const e = renameTag(t.name, to)
-                      if (!e && to.trim()) {
-                        const next = LIVE ? liveStore.getSnapshot().data.tags.find((x) => x.ref === t.ref) : undefined
-                        if (
-                          basisEnabled &&
-                          keepAlias &&
-                          to.trim() !== ((t as { sourceLabel?: string }).sourceLabel ?? t.name)
-                        ) {
-                          const oldName = (t as { sourceLabel?: string }).sourceLabel ?? t.name
-                          setTags((xs) =>
-                            xs.map((x) =>
-                              x.ref === t.ref
-                                ? {
-                                    ...x,
-                                    aliases: [
-                                      ...new Set([
-                                        ...x.aliases
-                                          .split(/[,，]/)
-                                          .map((v) => v.trim())
-                                          .filter(Boolean),
-                                        oldName,
-                                      ]),
-                                    ].join(', '),
-                                  }
-                                : x,
-                            ),
-                          )
-                        }
-                        setOpen(next?.name ?? to.trim())
+        {cur && (
+          <section className="mt-5 rounded-md border border-g-line bg-white">
+            <div className="flex flex-wrap items-center gap-2 px-5 min-h-12 py-2 border-b border-g-line text-[13px]">
+              {picking ? (
+                <>
+                  <span className="font-medium">{translate('admin:selectedCount', { count: picked.size })}</span>
+                  <span className="text-g-sub">{translate('admin:tapToSelectForDeletion')}</span>
+                  <span className="ml-auto flex items-center gap-1">
+                    <Btn
+                      className="h-8 px-3"
+                      onClick={() =>
+                        setPicked(picked.size === list.length ? new Set() : new Set(list.map((t) => t.name)))
                       }
-                      return e
-                    }}
-                  />
-                  <label className="text-[12px] text-g-sub">
-                    {translate('admin:type')}
-                    <select
-                      disabled={LIVE && !t.ref?.startsWith('custom/') && !t.ref?.startsWith('draft/')}
-                      value={t.dim}
-                      onChange={(e) => {
-                        patch(t.name, { dim: e.target.value })
-                        if (!basisEnabled) setOpen(null)
-                      }}
-                      className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
                     >
-                      {dims
-                        .filter((d) => !LIVE || !t.ref?.startsWith('custom/') || customType(d.id) || d.id === 'custom')
-                        .map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.label}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <label className="text-[12px] text-g-sub">
-                    {translate('admin:aliases')}
-                    <input
-                      value={t.aliases}
-                      onChange={(e) => patch(t.name, { aliases: e.target.value })}
-                      placeholder={translate('admin:eGLowRankAdaptation')}
-                      className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
-                    />
-                  </label>
-                  {basisEnabled ? (
-                    <>
-                      <label className="flex items-center gap-2 text-[12px] text-g-sub">
-                        <input type="checkbox" checked={keepAlias} onChange={(e) => setKeepAlias(e.target.checked)} />
-                        <span className="min-w-0">{translate('admin:keepOldNameAlias')}</span>
-                      </label>
-                      <details
-                        className="col-span-2 max-[1000px]:col-span-1 rounded-lg border border-g-line p-3"
-                        open={!t.inputVersion || undefined}
-                      >
-                        <summary className="cursor-pointer text-[13px] text-g-blue">
-                          {translate('admin:classificationBasis')}
-                        </summary>
-                        <div className="mt-3">
-                          <ClassificationFields
-                            label={t.displayLabel ?? (t as { sourceLabel?: string }).sourceLabel ?? t.name}
-                            value={t.aiLabel ?? t.name}
-                            description={t.desc}
-                            changeClass={t.changeClass}
-                            onChange={(v) => patch(t.name, v)}
-                          />
-                          <p className="mt-3 text-[12px] text-g-sub">
-                            {translate('admin:typeBasisSummary', {
-                              name: cur.aiLabel ?? cur.label,
-                              description: cur.description || '—',
-                            })}
-                          </p>
-                          {!!t.inputVersion && (
-                            <p className="mt-2 text-[12px] text-g-sub">
-                              {translate('admin:classificationVersion', { version: t.inputVersion })}
-                            </p>
-                          )}
-                        </div>
-                      </details>
-                      <p className="col-span-2 max-[1000px]:col-span-1 text-[12px] text-g-sub">
-                        {translate('admin:classificationReview', {
-                          unknown: t.review?.unknown ?? 0,
-                          count: t.review?.needs_review ?? 0,
+                      {picked.size === list.length ? translate('admin:selectNone') : translate('admin:selectAll')}
+                    </Btn>
+                    <Btn className="h-8 px-3" onClick={stopPicking}>
+                      {translate('admin:cancel')}
+                    </Btn>
+                    <Btn
+                      kind="danger"
+                      className="h-8 px-3"
+                      disabled={!picked.size}
+                      onClick={() => setBulkConfirm(true)}
+                    >
+                      <Icon d={P.trash} className="w-3.5 h-3.5" />
+                      {translate('admin:deleteSelected', { count: picked.size })}
+                    </Btn>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-g-sub tabular-nums">
+                    {translate('admin:tagCountInType', { count: list.length })}
+                  </span>
+                  <span className="text-g-mute">·</span>
+                  <span className="text-g-sub">{translate('admin:tapTagToEdit')}</span>
+                  {list.length > 0 && (
+                    <Btn
+                      className="ml-auto h-8 px-3 !text-g-sub hover:!text-g-red hover:!bg-g-danger-bg"
+                      onClick={() => {
+                        setOpen(null)
+                        setTagConfirm(null)
+                        setPicking(true)
+                      }}
+                    >
+                      <Icon d={P.trash} className="w-3.5 h-3.5" />
+                      {translate('admin:delete')}
+                    </Btn>
+                  )}
+                </>
+              )}
+            </div>
+            {bulkConfirm && (
+              <div
+                role="alertdialog"
+                className="flex flex-wrap items-center gap-3 px-5 py-3 text-[13px] text-g-danger-ink bg-g-danger-bg border-b border-g-line"
+              >
+                <p className="flex-1 min-w-40">
+                  {translate('admin:deleteTagsBulkConsequences', {
+                    count: picked.size,
+                    resources: usage([...picked]),
+                  })}
+                </p>
+                <button onClick={() => setBulkConfirm(false)} className="px-2 text-g-sub">
+                  {translate('admin:cancel')}
+                </button>
+                <Btn
+                  kind="danger"
+                  onClick={async () => {
+                    if (!(await deleteTags([...picked]))) return
+                    stopPicking()
+                  }}
+                >
+                  {translate('admin:confirmDeletion')}
+                </Btn>
+              </div>
+            )}
+            <div className="px-5 py-5">
+              <TagCloud
+                editing={picking}
+                selected={picking ? picked : undefined}
+                onRemove={(name) =>
+                  setPicked((xs) => {
+                    const next = new Set(xs)
+                    if (next.has(name)) next.delete(name)
+                    else next.add(name)
+                    return next
+                  })
+                }
+                onPick={(name) => {
+                  setTagConfirm(null)
+                  setOpen(open === name ? null : name)
+                }}
+                empty={
+                  <p className="py-10 text-center text-[14px] text-g-sub">{translate('admin:noTagsInThisTypeYet')}</p>
+                }
+                items={list.map((t) => ({
+                  id: t.name,
+                  ariaLabel: picking ? t.name : translate('admin:editTag', { name: t.name }),
+                  expanded: open === t.name,
+                  label: t.name,
+                  dim: t.dim,
+                  active: open === t.name,
+                  muted: !t.enabled || (!!open && open !== t.name),
+                  title: [
+                    t.name,
+                    t.aliases && translate('admin:aliasesSummary', { aliases: t.aliases }),
+                    !t.enabled && translate('admin:disabled'),
+                    t.auto && cur?.auto !== false ? translate('admin:aiAssisted') : translate('admin:manualOnly'),
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                }))}
+              />
+            </div>
+            {openTag &&
+              ((t) => (
+                <div className="border-t border-g-line">
+                  <div className="flex flex-wrap items-center gap-3 px-6 pt-5">
+                    <Chip dim={t.dim}>{t.name}</Chip>
+                    <span className="text-[12.5px] text-g-sub tabular-nums">
+                      {(Object.keys(KINDS) as Kind[])
+                        .map(
+                          (k) =>
+                            `${KINDS[k].label} ${LIVE ? (k === 'article' ? usage([t.name]) : 0) : arts.filter((a) => a.kind === k && a.tags.includes(t.name)).length}`,
+                        )
+                        .join(' · ')}
+                    </span>
+                    {!t.enabled && <span className="text-[12px] text-g-red">{translate('admin:disabled')}</span>}
+                    <button
+                      onClick={() => setOpen(null)}
+                      aria-label={translate('admin:close')}
+                      className="ml-auto w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface"
+                    >
+                      <Icon d={P.x} className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {tagConfirm === t.name && (
+                    <div
+                      role="group"
+                      aria-label={translate('admin:deleteTag', { name: t.name })}
+                      className="flex flex-wrap items-center gap-3 px-4 py-3 text-[13px] text-g-danger-ink bg-g-danger-bg"
+                    >
+                      <p className="flex-1 min-w-40">
+                        {translate(LIVE ? 'admin:deleteTagConsequences' : 'admin:removeFromResources', {
+                          count: usage([t.name]),
                         })}
                       </p>
-                      <p className="col-span-2 max-[1000px]:col-span-1 text-[12px] text-g-sub">
-                        {translate('admin:lifecycleHint')}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <label className="text-[12px] text-g-sub col-span-2 max-[1000px]:col-span-1">
-                        {translate('admin:whenToApplyOrExclude')}
-                        <textarea
-                          value={t.desc}
-                          onChange={(e) => patch(t.name, { desc: e.target.value })}
-                          rows={2}
-                          placeholder={translate('admin:defineSubstantiveDiscussionVersusAPassingMention')}
-                          className="mt-1 w-full p-3 rounded-lg border border-g-line bg-white text-[14px] text-g-text resize-none focus:border-g-blue outline-none"
-                        />
-                      </label>
-                    </>
-                  )}
-                  <div className="flex items-center gap-8 col-span-2 max-[1000px]:col-span-1 text-[14px]">
-                    <label className="flex items-center gap-2">
-                      <Switch
-                        on={t.auto}
-                        onChange={(v) => patch(t.name, { auto: v })}
-                        label={translate('admin:automaticAiTagging')}
-                      />{' '}
-                      {translate('admin:automaticAiTagging')}
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <Switch
-                        on={t.enabled}
-                        onChange={(v) => patch(t.name, { enabled: v })}
-                        label={translate('admin:enabled')}
-                      />{' '}
-                      {translate('admin:enabled')}
-                    </label>
-                    <span className="ml-auto flex items-center gap-2">
-                      <Btn kind="text" onClick={() => setTagConfirm(t.name)}>
-                        <Icon d={P.trash} className="w-4 h-4" /> {translate('admin:delete')}
-                      </Btn>
                       <Btn
-                        disabled={
-                          LIVE &&
-                          (!t.name.trim() ||
-                            ((t.auto || (!GO_BACKEND && fields.includes(t.dim as (typeof fields)[number]))) &&
-                              !t.desc.trim()))
-                        }
-                        onClick={() => {
-                          setOpen(null)
+                        kind="danger"
+                        onClick={async () => {
+                          if (!(await deleteTags([t.name]))) return
                           setTagConfirm(null)
+                          setOpen(null)
                         }}
                       >
-                        {translate('admin:done')}
+                        {translate('admin:confirmDeletion')}
                       </Btn>
-                    </span>
-                  </div>
+                      <button onClick={() => setTagConfirm(null)} className="px-2 text-g-sub">
+                        {translate('admin:cancel')}
+                      </button>
+                    </div>
+                  )}
+                  {
+                    <div className="px-6 py-6 grid gap-4 [&>*]:min-w-0 grid-cols-2 max-[1000px]:grid-cols-1">
+                      {LIVE &&
+                        liveStore.getSnapshot().data.relationsVersion === 1 &&
+                        liveStore.getSnapshot().data.structureEditable !== false &&
+                        t.ref &&
+                        !t.ref.startsWith('draft/') && <RelationEditor key={t.ref} tagRef={t.ref} />}
+                      <NameField
+                        name={t.displayLabel ?? (t as { sourceLabel?: string }).sourceLabel ?? t.name}
+                        rename={(to) => {
+                          const e = renameTag(t.name, to)
+                          if (!e && to.trim()) {
+                            const next = LIVE
+                              ? liveStore.getSnapshot().data.tags.find((x) => x.ref === t.ref)
+                              : undefined
+                            if (
+                              basisEnabled &&
+                              keepAlias &&
+                              to.trim() !== ((t as { sourceLabel?: string }).sourceLabel ?? t.name)
+                            ) {
+                              const oldName = (t as { sourceLabel?: string }).sourceLabel ?? t.name
+                              setTags((xs) =>
+                                xs.map((x) =>
+                                  x.ref === t.ref
+                                    ? {
+                                        ...x,
+                                        aliases: [
+                                          ...new Set([
+                                            ...x.aliases
+                                              .split(/[,，]/)
+                                              .map((v) => v.trim())
+                                              .filter(Boolean),
+                                            oldName,
+                                          ]),
+                                        ].join(', '),
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                            setOpen(next?.name ?? to.trim())
+                          }
+                          return e
+                        }}
+                      />
+                      <label className="text-[12px] text-g-sub">
+                        {translate('admin:type')}
+                        <select
+                          disabled={LIVE && !t.ref?.startsWith('custom/') && !t.ref?.startsWith('draft/')}
+                          value={t.dim}
+                          onChange={(e) => {
+                            patch(t.name, { dim: e.target.value })
+                            if (!basisEnabled) setOpen(null)
+                          }}
+                          className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
+                        >
+                          {dims
+                            .filter(
+                              (d) => !LIVE || !t.ref?.startsWith('custom/') || customType(d.id) || d.id === 'custom',
+                            )
+                            .map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.label}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <label className="text-[12px] text-g-sub">
+                        {translate('admin:aliases')}
+                        <input
+                          value={t.aliases}
+                          onChange={(e) => patch(t.name, { aliases: e.target.value })}
+                          placeholder={translate('admin:eGLowRankAdaptation')}
+                          className="mt-1 w-full h-10 px-3 rounded-xl border border-g-line bg-white text-[14px] text-g-text focus:border-g-blue outline-none"
+                        />
+                      </label>
+                      {basisEnabled ? (
+                        <>
+                          <label className="flex items-center gap-2 text-[12px] text-g-sub">
+                            <input
+                              type="checkbox"
+                              checked={keepAlias}
+                              onChange={(e) => setKeepAlias(e.target.checked)}
+                            />
+                            <span className="min-w-0">{translate('admin:keepOldNameAlias')}</span>
+                          </label>
+                          <details
+                            className="col-span-2 max-[1000px]:col-span-1 rounded-lg border border-g-line p-3"
+                            open={!t.inputVersion || undefined}
+                          >
+                            <summary className="cursor-pointer text-[13px] text-g-blue">
+                              {translate('admin:classificationBasis')}
+                            </summary>
+                            <div className="mt-3">
+                              <ClassificationFields
+                                label={t.displayLabel ?? (t as { sourceLabel?: string }).sourceLabel ?? t.name}
+                                value={t.aiLabel ?? t.name}
+                                description={t.desc}
+                                changeClass={t.changeClass}
+                                onChange={(v) => patch(t.name, v)}
+                              />
+                              <p className="mt-3 text-[12px] text-g-sub">
+                                {translate('admin:typeBasisSummary', {
+                                  name: cur.aiLabel ?? cur.label,
+                                  description: cur.description || '—',
+                                })}
+                              </p>
+                              {!!t.inputVersion && (
+                                <p className="mt-2 text-[12px] text-g-sub">
+                                  {translate('admin:classificationVersion', { version: t.inputVersion })}
+                                </p>
+                              )}
+                            </div>
+                          </details>
+                          <p className="col-span-2 max-[1000px]:col-span-1 text-[12px] text-g-sub">
+                            {translate('admin:classificationReview', {
+                              unknown: t.review?.unknown ?? 0,
+                              count: t.review?.needs_review ?? 0,
+                            })}
+                          </p>
+                          <p className="col-span-2 max-[1000px]:col-span-1 text-[12px] text-g-sub">
+                            {translate('admin:lifecycleHint')}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <label className="text-[12px] text-g-sub col-span-2 max-[1000px]:col-span-1">
+                            {translate('admin:whenToApplyOrExclude')}
+                            <textarea
+                              value={t.desc}
+                              onChange={(e) => patch(t.name, { desc: e.target.value })}
+                              rows={2}
+                              placeholder={translate('admin:defineSubstantiveDiscussionVersusAPassingMention')}
+                              className="mt-1 w-full p-3 rounded-lg border border-g-line bg-white text-[14px] text-g-text resize-none focus:border-g-blue outline-none"
+                            />
+                          </label>
+                        </>
+                      )}
+                      <div className="flex items-center gap-8 col-span-2 max-[1000px]:col-span-1 text-[14px]">
+                        <label className="flex items-center gap-2">
+                          <Switch
+                            on={t.auto}
+                            onChange={(v) => patch(t.name, { auto: v })}
+                            label={translate('admin:automaticAiTagging')}
+                          />{' '}
+                          {translate('admin:automaticAiTagging')}
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <Switch
+                            on={t.enabled}
+                            onChange={(v) => patch(t.name, { enabled: v })}
+                            label={translate('admin:enabled')}
+                          />{' '}
+                          {translate('admin:enabled')}
+                        </label>
+                        <span className="ml-auto flex items-center gap-2">
+                          <Btn
+                            kind="text"
+                            aria-label={translate('admin:deleteTag', { name: t.name })}
+                            onClick={() => setTagConfirm(t.name)}
+                          >
+                            <Icon d={P.trash} className="w-4 h-4" /> {translate('admin:delete')}
+                          </Btn>
+                          <Btn
+                            disabled={
+                              LIVE &&
+                              (!t.name.trim() ||
+                                ((t.auto || (!GO_BACKEND && fields.includes(t.dim as (typeof fields)[number]))) &&
+                                  !t.desc.trim()))
+                            }
+                            onClick={() => {
+                              setOpen(null)
+                              setTagConfirm(null)
+                            }}
+                          >
+                            {translate('admin:done')}
+                          </Btn>
+                        </span>
+                      </div>
+                    </div>
+                  }
                 </div>
-              )}
-            </li>
-          ))}
-          {cur && list.length === 0 && (
-            <li className="py-16 text-center text-[14px] text-g-sub">{translate('admin:noTagsInThisTypeYet')}</li>
-          )}
-        </ul>
+              ))(openTag)}
+          </section>
+        )}
         <p className="text-[12px] text-g-sub mt-5 text-center">
           {translate(
             basisEnabled ? 'admin:lifecycleHint' : 'admin:disablingStopsNewAutomaticAssignmentsExistingTagsAre',

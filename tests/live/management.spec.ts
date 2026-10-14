@@ -220,7 +220,7 @@ test('deletes an inactive built-in tag once and keeps the page usable while it s
   await page.getByRole('button', { name: '设置', exact: true }).click()
   await page.getByRole('tab', { name: '标签库', exact: true }).click()
   await page.getByRole('button', { name: '编辑标签 停用主题', exact: true }).click()
-  await page.getByRole('button', { name: '删除', exact: true }).click()
+  await page.getByRole('button', { name: '删除标签 停用主题', exact: true }).click()
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0]).toMatchObject({ expected_revision: 3, type: 'delete', dimension: 'topics', id: 'archived' })

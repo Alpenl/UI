@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react'
 import { useMutationLock } from '@/components/ui/mutation-lock'
 import type { WorkspaceModel } from '@/app/use-workspace-model'
-import { CompactFlow } from '@/components/ui/compact-flow'
+import { TagCloud } from '@/components/domain/tag-cloud'
 import { Group } from '@/components/layout/sidebar-group'
 import { Item } from '@/components/layout/sidebar-item'
 import { Icon } from '@/components/ui/icon'
 import { P } from '@/components/ui/icons'
+import { DESIGN } from '@/api/production-mode'
 import { KINDS, colDot, type Kind } from '@/domain/library'
 export function AppSidebar({
   model,
@@ -38,6 +40,8 @@ export function AppSidebar({
     | 'toggleTag'
     | 'activeCols'
     | 'todo'
+    | 'trashCount'
+    | 'openTrash'
   >
 }) {
   const locked = useMutationLock()
@@ -69,6 +73,8 @@ export function AppSidebar({
     toggleTag,
     activeCols,
     todo,
+    trashCount,
+    openTrash,
   } = model
   return (
     <aside
@@ -231,39 +237,17 @@ export function AppSidebar({
                     {list.length === 0 && draft?.dim !== d && (
                       <p className="text-[12px] text-g-sub">{translate('app:noTagsYetUseToAddOne')}</p>
                     )}
-                    <CompactFlow
-                      signature={JSON.stringify(
-                        list.map((t) => [
-                          t.ref ?? t.name,
-                          t.name,
-                          server
-                            ? kind === 'article'
-                              ? (server.facets.tags[t.ref ?? ''] ?? 0)
-                              : 0
-                            : kArts.filter((a) => a.tags.includes(t.name)).length,
-                        ]),
-                      )}
-                    >
-                      {list.map((t) => {
-                        const on = fTags.includes(t.name)
-                        const n = server
-                          ? kind === 'article'
-                            ? (server.facets.tags[t.ref ?? ''] ?? 0)
-                            : 0
-                          : kArts.filter((a) => a.tags.includes(t.name)).length
-                        return (
-                          <button
-                            key={t.ref ?? t.name}
-                            title={t.name}
-                            onClick={() => toggleTag(t.name)}
-                            aria-pressed={on}
-                            className={`h-6 px-2 rounded-full text-[12px] border transition max-w-full truncate shrink-0 ${on ? 'bg-g-blue border-g-blue text-white' : 'border-[#d3d6da] bg-white hover:border-g-mute'}`}
-                          >
-                            {t.name} <span className={on ? 'text-white/70' : 'text-g-sub'}>{n}</span>
-                          </button>
-                        )
-                      })}
-                    </CompactFlow>
+                    <TagCloud
+                      size="sm"
+                      onPick={toggleTag}
+                      items={list.map((t) => ({
+                        id: t.name,
+                        label: t.name,
+                        dim: t.dim,
+                        active: fTags.includes(t.name),
+                        muted: fTags.length > 0,
+                      }))}
+                    />
                   </div>
                 )}
               </div>
@@ -272,27 +256,74 @@ export function AppSidebar({
         </Group>
       </div>
 
-      <div className="shrink-0 border-t border-g-line p-3 space-y-0.5">
+      <div className="shrink-0 border-t border-g-line px-3 pt-3 pb-3 space-y-2">
         {(todo > 0 || quick === 'todo') && (
-          <Item
-            on={view === 'lib' && quick === 'todo'}
-            dot="#f9ab00"
-            count={todo}
+          <button
+            aria-pressed={view === 'lib' && quick === 'todo'}
             onClick={() =>
               goLib(() => patch({ quick: quick === 'todo' ? 'all' : 'todo', fCol: null, fTags: [], q: '' }))
             }
+            className={`group w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition ${view === 'lib' && quick === 'todo' ? 'border-g-amber bg-g-warn-bg shadow-[0_0_0_3px_rgba(249,171,0,.12)]' : 'border-g-warn-line bg-g-warn-bg/60 hover:bg-g-warn-bg'}`}
           >
-            {translate('app:needsAttention')}
-          </Item>
+            <span className="relative grid place-items-center w-7 h-7 rounded-full bg-white/80 shrink-0">
+              <span className="w-2 h-2 rounded-full bg-g-amber" />
+              {todo > 0 && <span className="absolute inset-0 rounded-full ring-1 ring-g-amber/40" />}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-medium text-g-warn-ink">{translate('app:needsAttention')}</span>
+              <span className="block text-[11.5px] text-g-warn-ink/70 tabular-nums">
+                {translate('app:itemsWaiting', { count: todo })}
+              </span>
+            </span>
+            <Icon d="M9 6l6 6-6 6" className="w-3.5 h-3.5 text-g-warn-ink/60 transition group-hover:translate-x-0.5" />
+          </button>
         )}
-        <Item
-          on={view === 'set'}
-          icon="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
-          onClick={() => openSettings('status')}
-        >
-          {translate('app:settings')}
-        </Item>
+        <nav className={`grid gap-1 ${DESIGN ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {DESIGN && (
+            <FooterLink on={view === 'trash'} icon={P.trash} count={trashCount || undefined} onClick={openTrash}>
+              {translate('app:trash')}
+            </FooterLink>
+          )}
+          <FooterLink on={view === 'set'} icon={GEAR} onClick={() => openSettings('status')}>
+            {translate('app:settings')}
+          </FooterLink>
+        </nav>
       </div>
     </aside>
+  )
+}
+
+const GEAR =
+  'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'
+
+function FooterLink({
+  on,
+  icon,
+  count,
+  onClick,
+  children,
+}: {
+  on: boolean
+  icon: string
+  count?: number
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-current={on ? 'page' : undefined}
+      className={`h-9 px-2.5 rounded-lg flex items-center justify-center gap-2 text-[13px] transition ${on ? 'bg-white text-g-blue-dark font-medium shadow-[0_0_0_1px_var(--color-g-line),0_1px_2px_rgba(0,0,0,.04)]' : 'text-g-sub hover:bg-black/[.04] hover:text-g-text'}`}
+    >
+      <Icon d={icon} className="w-4 h-4 shrink-0" />
+      <span className="truncate">{children}</span>
+      {count !== undefined && (
+        <span
+          className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10.5px] leading-[18px] tabular-nums ${on ? 'bg-g-tint text-g-blue' : 'bg-black/[.06] text-g-sub'}`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   )
 }

@@ -33,5 +33,8 @@
   "nameIsRequired": "Name is required",
   "tagAlreadyExists": "Tag “{{name}}” already exists",
   "alreadyExistsIn": "Already exists in “{{type}}”",
-  "uncategorized": "Uncategorized"
+  "uncategorized": "Uncategorized",
+  "trash": "Trash",
+  "tagFilterHeading": "Tag filter",
+  "itemsWaiting": "{{count}} waiting"
 }

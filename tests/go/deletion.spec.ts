@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { workspace } from '../live/workspace-fixture'
 
-test('quick tag deletion unlocks after its receipt even while summary refresh is pending', async ({ page }) => {
+test('tag cloud deletion unlocks after its receipt even while summary refresh is pending', async ({ page }) => {
   const labels = new Map([
     ['a', '串推'],
     ['b', '教程'],
@@ -61,7 +61,8 @@ test('quick tag deletion unlocks after its receipt even while summary refresh is
   const edit = page.getByRole('button', { name: '编辑标签 串推', exact: true })
   const remove = page.getByRole('button', { name: '删除标签 串推', exact: true })
   await expect(edit).toHaveAttribute('aria-expanded', 'false')
-  await expect(edit.locator('..').getByRole('button', { name: '删除标签 串推', exact: true })).toBeVisible()
+  await edit.click()
+  await expect(remove).toBeVisible()
   await remove.click()
   await page.getByRole('button', { name: '取消', exact: true }).click()
   expect(writes).toHaveLength(0)
@@ -69,6 +70,7 @@ test('quick tag deletion unlocks after its receipt even while summary refresh is
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
   await expect(remove).toHaveCount(0)
   const second = page.getByRole('button', { name: '删除标签 教程', exact: true })
+  await page.getByRole('button', { name: '编辑标签 教程', exact: true }).click()
   await expect(second).toBeEnabled()
   await second.click()
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
@@ -193,6 +195,7 @@ test('a rejected deletion does not lock the page; deleting the last tag retains 
   await expect(
     page.getByText('内置类型保留，不能删除；其中的标签可全部删除。没有自动标签时，AI 会跳过此类型。'),
   ).toBeVisible()
+  await page.getByRole('button', { name: '编辑标签 背景', exact: true }).click()
   await page.getByRole('button', { name: '删除标签 背景', exact: true }).click()
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('操作未执行，数据未更改。')

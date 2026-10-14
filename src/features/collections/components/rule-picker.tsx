@@ -1,6 +1,7 @@
 import { useAppTranslation as useTranslation } from '@/i18n/use-translation'
 
 import { type Tag } from '@/domain/library'
+import { TagCloud } from '@/components/domain/tag-cloud'
 
 export function RulePicker({
   tags,
@@ -38,22 +39,20 @@ export function RulePicker({
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5 mt-3">
-        {tags
-          .filter((t) => t.enabled || rule.includes(t.name))
-          .map((t) => {
-            const on = rule.includes(t.name)
-            return (
-              <button
-                key={t.name}
-                onClick={() => setRule(on ? rule.filter((r) => r !== t.name) : [...rule, t.name])}
-                aria-pressed={on}
-                className={`h-7 px-3 rounded-[4px] text-[13px] border transition ${on ? 'bg-g-text border-g-text text-white' : 'border-g-line hover:border-g-mute'}`}
-              >
-                {t.name}
-              </button>
-            )
-          })}
+      <div className="mt-3">
+        <TagCloud
+          size="sm"
+          onPick={(name) => setRule(rule.includes(name) ? rule.filter((r) => r !== name) : [...rule, name])}
+          items={tags
+            .filter((t) => t.enabled || rule.includes(t.name))
+            .map((t) => ({
+              id: t.name,
+              label: t.name,
+              dim: t.dim,
+              active: rule.includes(t.name),
+              muted: rule.length > 0,
+            }))}
+        />
       </div>
     </>
   )

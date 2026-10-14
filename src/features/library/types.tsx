@@ -45,6 +45,7 @@ export type LibProps = {
   clear: () => void
   fTags?: string[]
   toggleTag?: (n: string) => void
+  trashArticle?: (id: number) => void
 }
 
 export const MAX_TAGS = 10

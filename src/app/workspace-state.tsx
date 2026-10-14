@@ -1,6 +1,6 @@
 import { type Article, type Range } from '@/domain/library'
 
-export type View = 'lib' | 'set'
+export type View = 'lib' | 'set' | 'trash'
 
 export type SetTab = 'status' | 'col' | 'tag'
 

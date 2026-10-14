@@ -12,7 +12,57 @@ import type { LibProps } from '@/features/library/types'
 
 import { Timeline } from '@/features/library/components/activity-timeline'
 
-import { Label } from '@/components/ui/section-label'
+import { Icon } from '@/components/ui/icon'
+import type { ReactNode } from 'react'
+
+function Panel({
+  title,
+  count,
+  action,
+  tone,
+  className = '',
+  children,
+}: {
+  title: string
+  count?: number
+  action?: ReactNode
+  tone?: 'warn'
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <section
+      className={`flex flex-col min-w-0 rounded-2xl border border-g-line bg-white shadow-[0_1px_2px_rgba(60,64,67,.05)] overflow-hidden ${className}`}
+    >
+      <header className="flex items-center gap-2.5 h-12 px-5 border-b border-g-line shrink-0">
+        {tone === 'warn' && <span className="w-2 h-2 rounded-full bg-g-amber" aria-hidden="true" />}
+        <h2 className="text-[12px] font-medium tracking-[.12em] text-g-sub uppercase">{title}</h2>
+        {count !== undefined && (
+          <span
+            className={`text-[11px] tabular-nums rounded-full px-1.5 h-[18px] leading-[18px] ${tone === 'warn' ? 'bg-g-warn-bg text-g-warn-ink' : 'bg-g-surface text-g-sub'}`}
+          >
+            {count}
+          </span>
+        )}
+        <span className="ml-auto">{action}</span>
+      </header>
+      <div className="flex-1 flex flex-col">{children}</div>
+    </section>
+  )
+}
+
+function Empty({ icon, text }: { icon: string; text: string }) {
+  return (
+    <div className="flex-1 min-h-[180px] grid place-items-center px-8 py-10 text-center">
+      <div>
+        <span className="mx-auto grid place-items-center w-10 h-10 rounded-full bg-g-paper border border-g-line text-g-mute">
+          <Icon d={icon} className="w-[18px] h-[18px]" />
+        </span>
+        <p className="mt-3 text-[13px] text-g-sub max-w-[28ch] mx-auto leading-relaxed">{text}</p>
+      </div>
+    </div>
+  )
+}
 
 export function Overview(p: LibProps) {
   const { t: translate } = useTranslation()
@@ -156,128 +206,165 @@ export function Overview(p: LibProps) {
           <Timeline days={data?.days} arts={arts} range={range} setRange={setRange} />
         </div>
 
-        <div className="grid grid-cols-[1.35fr_1fr] gap-12 mt-12 items-start max-[1100px]:grid-cols-1">
-          <section>
-            <Label>{translate('library:recentActivity')}</Label>
-            {groups.length === 0 && (
-              <p className="text-[13px] text-g-sub border-t border-g-line pt-3">
-                {translate('library:noNewActivityInTryAWiderTime', {
-                  range: scope,
-                })}
-              </p>
-            )}
-            {groups.map((g) => (
-              <div key={g.day}>
-                <div className="flex items-center gap-3 py-2 border-t border-g-line text-[12px] text-g-sub tabular-nums">
-                  <span>{g.day}</span>
-                  <span className="flex-1 h-px bg-g-line" />
-                  <span>{translate('library:events', { count: g.items.length })}</span>
-                </div>
-                <ul>
-                  {g.items.map((e, i) => (
-                    <li key={i}>
-                      <button
-                        onClick={() => open(e.a.id)}
-                        className="w-full flex items-start gap-3 py-2.5 text-left hover:bg-g-paper -mx-2 px-2 rounded transition"
-                      >
-                        <span className="w-2 h-2 rounded-full mt-[7px] shrink-0" style={{ background: e.dot }} />
-                        <span className="flex-1 min-w-0">
-                          <span className="block text-[13.5px] truncate font-medium">{e.a.title}</span>
-                          <span className="block text-[12.5px] text-g-sub mt-0.5">{e.text}</span>
+        {failed.length > 0 && (
+          <Panel
+            className="mt-12"
+            title={translate('library:takeALook')}
+            count={failed.length}
+            tone="warn"
+            action={
+              failed.length > 4 && (
+                <button
+                  onClick={() => setShowAllFailed((v) => !v)}
+                  aria-expanded={showAllFailed}
+                  className="text-[12.5px] font-medium text-g-blue hover:underline"
+                >
+                  {showAllFailed
+                    ? translate('library:showLess')
+                    : translate('library:showAllCount', { count: failed.length })}
+                </button>
+              )
+            }
+          >
+            <ul className="divide-y divide-g-line">
+              {shownFailed.map((a) => (
+                <li key={a.id}>
+                  <button
+                    onClick={() => open(a.id)}
+                    className="group w-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 px-5 py-3.5 text-left hover:bg-g-paper transition"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-g-amber" aria-hidden="true" />
+                    <span className="min-w-0">
+                      <span className="block font-serif text-[15px] font-medium leading-snug truncate group-hover:text-g-blue transition">
+                        {a.title}
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-g-sub">
+                        <span className="font-medium text-g-warn-ink">
+                          {a.site?.status === 'dead'
+                            ? translate('library:brokenLink')
+                            : kind === 'site'
+                              ? translate('library:siteInformationUnavailable')
+                              : a.sourceAvailable
+                                ? translate('library:processingIncomplete')
+                                : translate('library:contentUnavailable')}
                         </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </section>
-
-          <div className="space-y-9">
-            <section>
-              <Label>{translate('library:takeALook')}</Label>
-              {failed.length === 0 ? (
-                <p className="text-[13px] text-g-sub border-t border-g-line pt-3">
-                  {translate('library:everythingLooksGood')}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {shownFailed.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => open(a.id)}
-                      className="w-full text-left rounded-xl bg-g-warn-bg border border-g-warn-line border-l-[3px] border-l-g-amber px-4 py-3.5 hover:shadow-sm hover:-translate-y-px transition"
-                    >
-                      <div className="text-[12px] font-medium text-g-warn-ink">
-                        {a.site?.status === 'dead'
-                          ? translate('library:brokenLink')
-                          : kind === 'site'
-                            ? translate('library:siteInformationUnavailable')
+                        <span className="text-g-line" aria-hidden="true">
+                          /
+                        </span>
+                        <span className="truncate">
+                          {a.site?.status === 'dead'
+                            ? translate('library:unavailableInRecentChecks')
                             : a.sourceAvailable
-                              ? translate('library:processingIncomplete')
-                              : translate('library:contentUnavailable')}
-                      </div>
+                              ? translate('library:savedSourceStillReadable')
+                              : translate('library:recaptureTheOriginalPageWithTheBrowserExtension')}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-3 max-[640px]:hidden">
                       <ClassificationStatus article={a} />
-                      <div className="font-serif text-[15px] font-medium mt-1 leading-snug line-clamp-2">{a.title}</div>
-                      <div className="text-[12.5px] text-g-sub mt-1.5 leading-relaxed">
-                        {a.site?.status === 'dead'
-                          ? translate('library:unavailableInRecentChecks')
-                          : a.sourceAvailable
-                            ? translate('library:savedSourceStillReadable')
-                            : translate('library:recaptureTheOriginalPageWithTheBrowserExtension')}
-                      </div>
-                    </button>
-                  ))}
-                  {failed.length > 4 && (
-                    <button
-                      onClick={() => setShowAllFailed((v) => !v)}
-                      aria-expanded={showAllFailed}
-                      className="w-full h-9 rounded-full border border-g-line bg-white text-[12.5px] font-medium text-g-blue hover:bg-g-tint transition"
-                    >
-                      {showAllFailed
-                        ? translate('library:showLess')
-                        : translate('library:showAllCount', {
-                            count: failed.length,
-                          })}
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
-            <section>
-              <Label>{translate('library:collectionGrowth')}</Label>
-              <ul className="border-t border-g-line">
+                      <Icon
+                        d="M9 6l6 6-6 6"
+                        className="w-3.5 h-3.5 text-g-mute transition group-hover:translate-x-0.5 group-hover:text-g-blue"
+                      />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        )}
+
+        <div className="grid grid-cols-2 gap-5 mt-5 items-stretch max-[900px]:grid-cols-1">
+          <Panel
+            title={translate('library:recentActivity')}
+            count={events.length || undefined}
+            className={failed.length ? '' : 'mt-7'}
+          >
+            {groups.length === 0 ? (
+              <Empty
+                icon="M12 7v5l3 2M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z"
+                text={translate('library:noNewActivityInTryAWiderTime', { range: scope })}
+              />
+            ) : (
+              <div className="max-h-[420px] overflow-y-auto scroll-quiet px-5 pb-3">
+                {groups.map((g) => (
+                  <div key={g.day}>
+                    <div className="sticky top-0 bg-white flex items-center gap-3 pt-3 pb-1.5 text-[11.5px] text-g-sub tabular-nums">
+                      <span className="font-medium text-g-ink">{g.day}</span>
+                      <span className="flex-1 h-px bg-g-line" />
+                      <span>{translate('library:events', { count: g.items.length })}</span>
+                    </div>
+                    <ul className="relative before:absolute before:left-[3px] before:top-3 before:bottom-3 before:w-px before:bg-g-line">
+                      {g.items.map((e, i) => (
+                        <li key={i}>
+                          <button
+                            onClick={() => open(e.a.id)}
+                            className="group relative w-full flex items-start gap-3 py-2 text-left"
+                          >
+                            <span
+                              className="relative w-[7px] h-[7px] rounded-full mt-[7px] shrink-0 ring-2 ring-white"
+                              style={{ background: e.dot }}
+                            />
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[13.5px] truncate font-medium group-hover:text-g-blue transition">
+                                {e.a.title}
+                              </span>
+                              <span className="block text-[12px] text-g-sub mt-0.5 truncate">{e.text}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel
+            title={translate('library:collectionGrowth')}
+            count={active.length || undefined}
+            className={failed.length ? '' : 'mt-7'}
+          >
+            {active.length === 0 ? (
+              <Empty icon="M4 6h16M4 12h16M4 18h10" text={translate('library:noCollectionsYet')} />
+            ) : (
+              <ul className="px-2 py-2">
                 {active.map((c) => {
                   const n = c.count ?? arts.filter((a) => c.id in a.cols).length
                   const inR = c.rangeCount ?? ranged.filter((a) => c.id in a.cols).length
+                  const dot = colDot(cols, c.id)
                   return (
                     <li key={c.id}>
                       <button
                         onClick={() => p.goCol(c.id)}
-                        className="w-full flex items-center gap-3 py-2.5 border-b border-g-line text-left hover:bg-g-paper -mx-2 px-2 rounded transition"
+                        className="group w-full px-3 py-2.5 rounded-lg text-left hover:bg-g-paper transition"
                       >
-                        <span className="w-2 h-2 rounded-full" style={{ background: colDot(cols, c.id) }} />
-                        <span className="flex-1 text-[13.5px] truncate">{c.name}</span>
-                        {range !== 'all' && inR > 0 && (
-                          <span className="text-[12px] text-g-ok font-medium tabular-nums">+{inR}</span>
-                        )}
-                        <div className="w-20 h-1.5 rounded-full bg-g-surface overflow-hidden">
-                          <div
-                            className="h-full"
-                            style={{
-                              width: Math.max(6, (n / maxCount) * 100) + '%',
-                              background: colDot(cols, c.id),
-                            }}
+                        <span className="flex items-center gap-2.5">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: dot }} />
+                          <span className="flex-1 text-[13.5px] truncate group-hover:text-g-blue transition">
+                            {c.name}
+                          </span>
+                          {range !== 'all' && inR > 0 && (
+                            <span className="text-[11.5px] text-g-green font-medium tabular-nums bg-g-ok/10 rounded-full px-1.5">
+                              +{inR}
+                            </span>
+                          )}
+                          <span className="font-serif text-[15px] tabular-nums text-g-ink">{n}</span>
+                        </span>
+                        <span className="mt-2 ml-[18px] block h-1 rounded-full bg-g-surface overflow-hidden">
+                          <span
+                            className="block h-full rounded-full transition-[width] duration-500"
+                            style={{ width: Math.max(4, (n / maxCount) * 100) + '%', background: dot }}
                           />
-                        </div>
-                        <span className="text-[12.5px] tabular-nums text-g-sub w-5 text-right">{n}</span>
+                        </span>
                       </button>
                     </li>
                   )
                 })}
               </ul>
-            </section>
-          </div>
+            )}
+          </Panel>
         </div>
       </div>
     </div>

@@ -26,7 +26,9 @@ export function Reader({
   setSel,
   allArts,
   openItem,
+  trashArticle,
 }: {
+  trashArticle?: (id: number) => void
   allArts: Article[]
   openItem: (id: number, fromId?: number) => void
   a: Article
@@ -113,6 +115,14 @@ export function Reader({
               {a.kind === 'site' ? translate('library:visitWebsite') : translate('library:originalPage')}{' '}
               <Icon d={P.ext} className="w-3.5 h-3.5" />
             </a>
+            {trashArticle && (
+              <button
+                onClick={() => trashArticle(a.id)}
+                className="h-8 px-3 rounded-full inline-flex items-center gap-1.5 text-[12.5px] font-medium text-g-sub hover:bg-g-danger-bg hover:text-g-red"
+              >
+                <Icon d={P.trash} className="w-3.5 h-3.5" /> {translate('library:moveToTrash')}
+              </button>
+            )}
             {(!a.failed || a.sourceAvailable) && (
               <button
                 onClick={() => setInsp((v) => !v)}

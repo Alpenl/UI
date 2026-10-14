@@ -1,5 +1,6 @@
 import { liveStore } from '@/api/live-store'
-import { CollectionManagement } from './collection-management'
+import { CollectionDrawer, type DrawerTab } from './collection-management'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { LIVE, operationKey } from '@/api/production'
 import { useAppTranslation as useTranslation } from '@/i18n/use-translation'
 
@@ -42,7 +43,8 @@ export function Collections({
   const [mode, setMode] = useState<'any' | 'all'>('any')
   const [scan, setScan] = useState(true)
   const [editing, setEditing] = useState<string | null>(null)
-  const [confirmDel, setConfirmDel] = useState<string | null>(null)
+  const [managing, setManaging] = useState<string | null>(null)
+  const [drawerTab, setDrawerTab] = useState<DrawerTab>('rule')
   const [status, setStatus] = useState<'active' | 'archived' | 'deleted'>('active')
   useEffect(() => {
     if (LIVE) liveStore.setEditing(!!editing)
@@ -191,10 +193,15 @@ export function Collections({
           )}
           {list.map((c) => {
             const isEditing = editing === c.id
+            const auto = LIVE ? !!c.ruleEnabled : c.rule.length > 0
+            const open = () => LIVE && !c.deleted && !isEditing && setManaging(c.id)
             return (
-              <li key={c.id} className="group px-6 py-5 transition hover:bg-g-paper/70">
-                <div className="flex items-start gap-4">
-                  <div className="flex-1 min-w-0">
+              <li key={c.id} className="group relative transition hover:bg-g-paper/70">
+                <div className="flex items-start gap-4 px-6 py-5">
+                  <div
+                    className={`flex-1 min-w-0 ${LIVE && !c.deleted && !isEditing ? 'cursor-pointer' : ''}`}
+                    onClick={open}
+                  >
                     <div className="flex items-center gap-2">
                       {isEditing ? (
                         <input
@@ -203,24 +210,22 @@ export function Collections({
                           aria-label={translate('admin:collectionName')}
                           onChange={(e) => patch(c.id, { name: e.target.value })}
                           onKeyDown={(e) => e.key === 'Enter' && setEditing(null)}
-                          className="text-[18px] font-medium border-b border-g-blue outline-none"
+                          className="flex-1 text-[18px] font-medium border-b border-g-blue outline-none bg-transparent"
                         />
                       ) : (
-                        <h2 className="font-serif text-[19px] font-medium">{c.name}</h2>
+                        <h2 className="font-serif text-[19px] font-medium truncate">{c.name}</h2>
                       )}
-                      {c.pinned && <Icon d={P.pin} className="w-4 h-4 text-g-blue" />}
-                      <span className="text-[12px] text-g-sub tabular-nums rounded-[3px] bg-g-surface px-1.5 py-0.5">
-                        {count(c)} {KINDS[kind].unit}
-                      </span>
+                      {c.pinned && <Icon d={P.pin} className="w-4 h-4 text-g-blue shrink-0" />}
                     </div>
                     {isEditing ? (
-                      <div className="mt-1">
+                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                         <textarea
                           value={c.purpose}
                           aria-label={translate('admin:purpose')}
+                          placeholder={translate('admin:purposeAiUsesThisToUnderstandWhatBelongs')}
                           onChange={(e) => patch(c.id, { purpose: e.target.value })}
                           rows={2}
-                          className="w-full text-[14px] border border-g-line rounded-lg p-2 resize-none focus:border-g-blue outline-none"
+                          className="w-full text-[14px] border border-g-line bg-white rounded-md p-3 resize-none focus:border-g-blue outline-none"
                         />
                         {!structured && (
                           <RulePicker
@@ -269,91 +274,130 @@ export function Collections({
                             </div>
                           </div>
                         )}
-                        <div className="mt-1.5">
-                          <Btn disabled={LIVE && !c.name.trim()} onClick={() => setEditing(null)}>
+                        <div className="mt-3 flex justify-end">
+                          <Btn kind="primary" disabled={LIVE && !c.name.trim()} onClick={() => setEditing(null)}>
                             {translate('admin:done')}
                           </Btn>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[14px] text-g-sub mt-1.5 leading-relaxed">{c.purpose}</p>
+                      c.purpose && (
+                        <p className="text-[14px] text-g-sub mt-1.5 leading-relaxed line-clamp-2">{c.purpose}</p>
+                      )
                     )}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-                      {c.rule.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3 text-[12.5px] text-g-sub">
+                      <span className="tabular-nums text-g-ink">
+                        {count(c)} {KINDS[kind].unit}
+                      </span>
+                      <span className="w-px h-3 bg-g-line" aria-hidden="true" />
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          aria-hidden="true"
+                          className={`w-1.5 h-1.5 rounded-full ${c.archived ? 'bg-g-mute' : auto ? 'bg-g-ok' : 'bg-g-line'}`}
+                        />
+                        {c.archived
+                          ? translate('admin:automaticCollectionPaused')
+                          : auto
+                            ? translate('admin:autoCollecting')
+                            : translate(LIVE ? 'admin:manualCollection' : 'admin:aiSemanticMatchingNoFixedRules')}
+                      </span>
+                      {c.rule.length > 0 && (
                         <>
-                          <span className="text-[12px] text-g-sub mr-1">
-                            {c.mode === 'any' ? translate('admin:matchAny') : translate('admin:matchAll')}
-                          </span>
-                          {c.rule.map((r) => (
+                          <span className="w-px h-3 bg-g-line" aria-hidden="true" />
+                          <span>{c.mode === 'any' ? translate('admin:matchAny') : translate('admin:matchAll')}</span>
+                          {c.rule.slice(0, 4).map((r) => (
                             <Chip key={r} dim={tags.find((t) => t.name === r)?.dim ?? 'topic'}>
                               {r}
                             </Chip>
                           ))}
+                          {c.rule.length > 4 && <span className="tabular-nums">+{c.rule.length - 4}</span>}
                         </>
-                      ) : (
-                        <span className="text-[12px] text-g-sub">
-                          {translate(LIVE ? 'admin:manualCollection' : 'admin:aiSemanticMatchingNoFixedRules')}
-                        </span>
                       )}
-                      {c.archived && (
-                        <span className="text-[12px] text-g-sub ml-2">
-                          {translate('admin:automaticCollectionPaused')}
-                        </span>
+                      {LIVE && c.admission === 'review' && (
+                        <>
+                          <span className="w-px h-3 bg-g-line" aria-hidden="true" />
+                          <span>{translate('admin:reviewRequired')}</span>
+                        </>
                       )}
                     </div>
                   </div>
                   {c.deleted ? (
-                    <Btn onClick={() => patch(c.id, { deleted: false })}>{translate('admin:restore')}</Btn>
-                  ) : confirmDel === c.id ? (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-[13px] text-g-sub mr-1">
-                        {translate('admin:itemsWillLeaveThisCollection', { count: count(c), unit: KINDS[kind].unit })}
-                      </span>
-                      <Btn onClick={() => setConfirmDel(null)}>{translate('admin:cancel')}</Btn>
-                      <Btn
-                        kind="danger"
-                        onClick={() => {
-                          deleteCol(c.id)
-                          setConfirmDel(null)
-                        }}
-                      >
-                        {translate('admin:confirmDeletion')}
-                      </Btn>
-                    </div>
+                    <Btn kind="outline" onClick={() => patch(c.id, { deleted: false })}>
+                      {translate('admin:restore')}
+                    </Btn>
                   ) : (
-                    <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 focus-within:opacity-100 transition">
-                      {[
-                        [
-                          P.pin,
-                          c.pinned ? translate('admin:unpin') : translate('admin:pin'),
-                          () => patch(c.id, { pinned: !c.pinned }),
-                        ],
-                        [P.edit, translate('admin:renameEditDescription'), () => setEditing(isEditing ? null : c.id)],
-                        [
-                          P.archive,
-                          c.archived ? translate('admin:unarchive') : translate('admin:archive'),
-                          () => patch(c.id, { archived: !c.archived }),
-                        ],
-                        [P.trash, translate('admin:deleteCollectionKeepContent'), () => setConfirmDel(c.id)],
-                      ].map(([d, t, f]) => (
-                        <button
-                          key={t as string}
-                          title={t as string}
-                          aria-label={t as string}
-                          onClick={f as () => void}
-                          className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface hover:text-g-text"
-                        >
-                          <Icon d={d as string} className="w-[18px] h-[18px]" />
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                        {(
+                          [
+                            [
+                              P.pin,
+                              c.pinned ? translate('admin:unpin') : translate('admin:pin'),
+                              () => patch(c.id, { pinned: !c.pinned }),
+                            ],
+                            [
+                              P.edit,
+                              translate('admin:renameEditDescription'),
+                              () => setEditing(isEditing ? null : c.id),
+                            ],
+                            [
+                              P.archive,
+                              c.archived ? translate('admin:unarchive') : translate('admin:archive'),
+                              () => patch(c.id, { archived: !c.archived }),
+                            ],
+                          ] as const
+                        ).map(([d, t, f]) => (
+                          <button
+                            key={t}
+                            title={t}
+                            aria-label={t}
+                            onClick={f}
+                            className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-surface hover:text-g-text"
+                          >
+                            <Icon d={d} className="w-[18px] h-[18px]" />
+                          </button>
+                        ))}
+                        <ConfirmDialog
+                          title={translate('admin:deleteCollectionKeepContent')}
+                          body={translate('admin:itemsWillLeaveThisCollection', {
+                            count: count(c),
+                            unit: KINDS[kind].unit,
+                          })}
+                          confirmLabel={translate('admin:confirmDeletion')}
+                          onConfirm={() => deleteCol(c.id)}
+                          trigger={
+                            <button
+                              title={translate('admin:deleteCollectionKeepContent')}
+                              aria-label={translate('admin:deleteCollectionKeepContent')}
+                              className="w-8 h-8 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-danger-bg hover:text-g-red"
+                            >
+                              <Icon d={P.trash} className="w-[18px] h-[18px]" />
+                            </button>
+                          }
+                        />
+                      </div>
+                      {LIVE && !isEditing && (
+                        <Btn kind="outline" className="ml-2 h-8 px-3" onClick={() => setManaging(c.id)}>
+                          {translate('admin:manage')}
+                          <Icon d="M9 6l6 6-6 6" className="w-3.5 h-3.5 -mr-1 text-g-mute" />
+                        </Btn>
+                      )}
                     </div>
                   )}
                 </div>
-                {LIVE && !c.deleted && !isEditing && <CollectionManagement collection={c} articles={arts} />}
               </li>
             )
           })}
         </ul>
+        {managing && cols.find((c) => c.id === managing) && (
+          <CollectionDrawer
+            collection={cols.find((c) => c.id === managing)!}
+            count={count(cols.find((c) => c.id === managing)!)}
+            tab={drawerTab}
+            setTab={setDrawerTab}
+            onClose={() => setManaging(null)}
+          />
+        )}
         <p className="text-[12px] text-g-sub mt-6 text-center">
           {translate('admin:deletingACollectionRemovesMembershipOnlySavedContent')}
         </p>

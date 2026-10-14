@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import { colDot, type Article } from '@/domain/library'
 
-import { Chip } from '@/components/domain/tag-chip'
+import { TagCloud } from '@/components/domain/tag-cloud'
 import { Icon } from '@/components/ui/icon'
 import { P } from '@/components/ui/icons'
 import { useDims } from '@/features/tags/dimensions'
@@ -28,6 +28,8 @@ export function OrganizeBody({
 
   const { def } = useDims()
   const [adding, setAdding] = useState(false)
+  const [editingTags, setEditingTags] = useState(false)
+  const [tagQuery, setTagQuery] = useState('')
   const addable = tags.filter((t) => t.enabled && !a.tags.includes(t.name))
   const removeTag = (n: string) =>
     update(a.id, (x) => ({ ...x, tags: x.tags.filter((t) => t !== n), excluded: [...x.excluded, n] }))
@@ -35,7 +37,6 @@ export function OrganizeBody({
   const addTag = (n: string) => {
     if (full) return
     update(a.id, (x) => ({ ...x, tags: [...x.tags, n], excluded: x.excluded.filter((e) => e !== n) }))
-    setAdding(false)
   }
   const toggleCol = (id: string) =>
     update(a.id, (x) => {
@@ -50,44 +51,57 @@ export function OrganizeBody({
       <div className="p-5 space-y-7">
         <section>
           <Label>{translate('library:tags', { count: a.tags.length, limit: MAX_TAGS })}</Label>
-          <div className="flex flex-wrap gap-1.5 items-center">
-            {a.tags.map((t) => (
-              <Chip key={t} dim={dimOf(t)} onRemove={() => removeTag(t)}>
-                {t}
-              </Chip>
-            ))}
-            <div className="relative">
+          <TagCloud
+            size="sm"
+            editing={editingTags}
+            onRemove={removeTag}
+            items={a.tags.map((t) => ({ id: t, label: t, dim: dimOf(t) }))}
+            empty={<p className="text-[12.5px] text-g-mute">{translate('admin:noTagsYet')}</p>}
+          />
+          <div className="mt-2.5 flex items-center gap-1">
+            <button
+              disabled={full}
+              title={full ? translate('library:upToTagsPerArticle', { limit: MAX_TAGS }) : undefined}
+              onClick={() => (setAdding((v) => !v), setEditingTags(false))}
+              aria-expanded={adding}
+              className={`h-7 px-2.5 rounded-full text-[12px] inline-flex items-center gap-1 transition disabled:opacity-40 disabled:cursor-not-allowed ${adding ? 'bg-g-text text-white' : 'text-g-blue hover:bg-g-tint'}`}
+            >
+              <Icon d={adding ? P.x : P.plus} className="w-3 h-3" />
+              {adding ? translate('admin:done') : translate('library:add')}
+            </button>
+            {a.tags.length > 0 && (
               <button
-                disabled={full}
-                title={full ? translate('library:upToTagsPerArticle', { limit: MAX_TAGS }) : undefined}
-                onClick={() => setAdding((v) => !v)}
-                aria-expanded={adding}
-                aria-haspopup="listbox"
-                className="h-6 px-2.5 rounded-full border border-dashed border-[#b6bac0] text-[12px] text-g-sub hover:bg-white inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => (setEditingTags((v) => !v), setAdding(false))}
+                aria-pressed={editingTags}
+                className={`h-7 px-2.5 rounded-full text-[12px] inline-flex items-center gap-1 transition ${editingTags ? 'bg-g-text text-white' : 'text-g-sub hover:bg-g-surface hover:text-g-text'}`}
               >
-                <Icon d={P.plus} className="w-3 h-3" /> {translate('library:add')}
+                <Icon d={editingTags ? P.check : P.edit} className="w-3 h-3" />
+                {editingTags ? translate('admin:done') : translate('library:removeTags')}
               </button>
-              {adding && (
-                <div className="absolute z-20 top-8 left-0 w-52 max-h-56 overflow-y-auto scroll-quiet bg-white rounded-xl border border-g-line shadow-[0_8px_24px_rgba(0,0,0,.12)] py-1">
-                  {addable.length === 0 && (
-                    <p className="px-3.5 h-8 flex items-center text-[12.5px] text-g-sub">
-                      {translate('library:noTagsAvailable')}
-                    </p>
-                  )}
-                  {addable.map((t) => (
-                    <button
-                      key={t.name}
-                      onClick={() => addTag(t.name)}
-                      className="w-full text-left px-3.5 h-8 text-[13px] hover:bg-g-surface flex justify-between items-center"
-                    >
-                      {t.name}
-                      <span className="text-[12px] text-g-sub">{def(t.dim).label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
+          {adding && (
+            <div className="mt-3 rounded-lg border border-g-line bg-white p-3">
+              <input
+                autoFocus
+                value={tagQuery}
+                onChange={(e) => setTagQuery(e.target.value)}
+                placeholder={translate('admin:searchTags')}
+                aria-label={translate('admin:searchTags')}
+                className="w-full h-8 px-2.5 mb-3 rounded-md bg-g-paper border border-g-line text-[12.5px] outline-none focus:border-g-blue"
+              />
+              <div className="max-h-56 overflow-y-auto scroll-quiet">
+                <TagCloud
+                  size="sm"
+                  onPick={addTag}
+                  items={addable
+                    .filter((t) => t.name.toLowerCase().includes(tagQuery.trim().toLowerCase()))
+                    .map((t) => ({ id: t.name, label: t.name, dim: t.dim, title: def(t.dim).label }))}
+                  empty={<p className="text-[12.5px] text-g-sub">{translate('library:noTagsAvailable')}</p>}
+                />
+              </div>
+            </div>
+          )}
           <p className="text-[12px] text-g-sub mt-2.5 leading-relaxed">
             {translate('library:removedTagsWillNotBeAddedBackAutomatically')}
             {a.excluded.length > 0 && (

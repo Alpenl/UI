@@ -2,7 +2,17 @@ import { Children, useLayoutEffect, useRef, useState, type ReactElement } from '
 import { compactOrder } from './compact-layout'
 
 /** Measures real fonts/pill borders; visual and keyboard order always agree. */
-export function CompactFlow({ children, signature }: { children: ReactElement[]; signature: string }) {
+export function CompactFlow({
+  children,
+  signature,
+  gap = 4,
+  className = '',
+}: {
+  children: ReactElement[]
+  signature: string
+  gap?: number
+  className?: string
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [order, setOrder] = useState<readonly string[]>([])
   useLayoutEffect(() => {
@@ -16,7 +26,7 @@ export function CompactFlow({ children, signature }: { children: ReactElement[];
         id: (node as HTMLElement).dataset.flowId!,
         width: Math.ceil(node.getBoundingClientRect().width),
       }))
-      const next = compactOrder(items, width)
+      const next = compactOrder(items, width, gap)
       setOrder((previous) =>
         previous.length === next.length && previous.every((id, i) => id === next[i]) ? previous : next,
       )
@@ -40,12 +50,12 @@ export function CompactFlow({ children, signature }: { children: ReactElement[];
       cancelAnimationFrame(frame)
       document.fonts.removeEventListener('loadingdone', schedule)
     }
-  }, [signature])
+  }, [signature, gap])
   const elements = Children.toArray(children) as ReactElement[]
   const rank = new Map(order.map((id, i) => [id, i]))
   elements.sort((a, b) => (rank.get(String(a.key)) ?? Infinity) - (rank.get(String(b.key)) ?? Infinity))
   return (
-    <div ref={ref} className="flex flex-wrap gap-1" data-compact-flow="">
+    <div ref={ref} className={`flex flex-wrap ${className}`} style={{ gap }} data-compact-flow="">
       {elements.map((child) => (
         <div key={child.key} data-flow-id={child.key} className="max-w-full flex shrink-0">
           {child}

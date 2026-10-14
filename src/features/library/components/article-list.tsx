@@ -1,6 +1,6 @@
 import { ClassificationStatus } from './classification-status'
 import { TagFilterScopes } from '@/features/tags/components/tag-filter-scopes'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { savedDateLabel } from '@/domain/library'
 import { useAppTranslation as useTranslation } from '@/i18n/use-translation'
 
@@ -23,6 +23,9 @@ export function ArticleList(p: LibProps) {
   const { t: translate } = useTranslation()
 
   const { shown, q, sel, cols } = p
+  const fTags = p.fTags ?? []
+  const [editingTags, setEditingTags] = useState(false)
+  if (editingTags && fTags.length === 0) setEditingTags(false)
   const intentTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const cancelIntent = () => clearTimeout(intentTimer.current)
   useEffect(() => () => clearTimeout(intentTimer.current), [])
@@ -54,18 +57,34 @@ export function ArticleList(p: LibProps) {
             </button>
           )}
         </div>
-        <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-[18px] font-semibold truncate">{p.heading}</h2>
-          <span className="text-[12px] text-g-sub shrink-0 ml-3">
-            {p.loading ? '…' : (p.server?.total ?? shown.length)} {KINDS[p.kind].unit}
-            {p.filtering && (
-              <button onClick={p.clear} className="ml-2 text-g-blue font-medium hover:underline">
-                {translate('library:clear')}
-              </button>
+          <span className="text-[12px] text-g-sub shrink-0 flex items-baseline gap-2">
+            <span className="tabular-nums">
+              {p.loading ? '…' : (p.server?.total ?? shown.length)} {KINDS[p.kind].unit}
+            </span>
+            {editingTags ? (
+              <>
+                <button onClick={p.clear} className="text-g-red font-medium hover:underline">
+                  {translate('library:clearAll')}
+                </button>
+                <button onClick={() => setEditingTags(false)} className="text-g-blue font-medium hover:underline">
+                  {translate('admin:done')}
+                </button>
+              </>
+            ) : (
+              p.filtering && (
+                <button
+                  onClick={() => (fTags.length ? setEditingTags(true) : p.clear())}
+                  className="text-g-blue font-medium hover:underline"
+                >
+                  {translate('library:clear')}
+                </button>
+              )
             )}
           </span>
         </div>
-        <TagFilterScopes />
+        <TagFilterScopes tags={fTags} dimOf={p.dimOf} editing={editingTags} remove={(n) => p.toggleTag?.(n)} />
         {p.server?.reconciling && (
           <p role="status" className="text-[12px] text-g-sub">
             {translate('admin:reconcilingRules')}
@@ -116,9 +135,23 @@ export function ArticleList(p: LibProps) {
                 }
               }}
               aria-current={on ? 'true' : undefined}
-              className={`relative w-full text-left px-4 py-3.5 border-b border-g-line transition cursor-pointer ${on ? 'bg-white' : 'hover:bg-white/70'}`}
+              className={`group relative w-full text-left px-4 py-3.5 border-b border-g-line transition cursor-pointer ${on ? 'bg-white' : 'hover:bg-white/70'}`}
             >
               {on && <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-g-blue" />}
+              {p.trashArticle && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    p.trashArticle!(a.id)
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  title={translate('library:moveToTrash')}
+                  aria-label={`${translate('library:moveToTrash')}: ${a.title}`}
+                  className="absolute right-3 top-2.5 z-[1] w-7 h-7 grid place-items-center rounded-full bg-white border border-g-line text-g-sub opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100 max-[900px]:opacity-100 hover:text-g-red hover:bg-g-danger-bg hover:border-transparent"
+                >
+                  <Icon d={P.trash} className="w-3.5 h-3.5" />
+                </button>
+              )}
               {p.server?.match_reasons?.[a.id]
                 ?.filter((reason) => reason.requested_ref !== reason.via_ref)
                 .map((reason) => (

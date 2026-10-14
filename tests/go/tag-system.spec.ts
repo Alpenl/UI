@@ -77,7 +77,10 @@ test('P2 preview rejects stale results and commits only after explicit confirmat
   await page.getByRole('tab', { name: '标签库', exact: true }).click()
   await page.getByRole('tab', { name: '主题 2', exact: true }).click()
   await page.getByRole('button', { name: '编辑标签 文生图', exact: true }).click()
-  await page.getByLabel('上位标签（可选）').selectOption('system/topics/parent')
+  await page
+    .getByRole('group', { name: '上位标签（可选）', exact: true })
+    .getByRole('button', { name: 'AIGC', exact: true })
+    .click()
   expect(commits).toBe(0)
   await page.getByRole('button', { name: '预览全部影响', exact: true }).click()
   await expect(page.getByText('正式成员 1 → 2（不含待审核）')).toBeVisible()
@@ -93,7 +96,11 @@ test('P2 preview rejects stale results and commits only after explicit confirmat
     .poll(() => page.getByRole('complementary').evaluate((el) => el.getBoundingClientRect().right))
     .toBeLessThanOrEqual(1)
   await page.getByRole('button', { name: '编辑标签 文生图', exact: true }).click()
-  await expect(page.getByLabel('上位标签（可选）')).toHaveValue('system/topics/parent')
+  await expect(
+    page
+      .getByRole('group', { name: '上位标签（可选）', exact: true })
+      .getByRole('button', { name: 'AIGC', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: '/tmp/cairn-p23-relations-mobile.png' })
 })

@@ -14,6 +14,9 @@ const SettingsWorkspace = lazy(() =>
 const SiteWorkspace = lazy(() =>
   import('@/features/sites/components/site-workspace').then((module) => ({ default: module.SiteWorkspace })),
 )
+const TrashWorkspace = lazy(() =>
+  import('@/features/trash/components/trash-workspace').then((module) => ({ default: module.TrashWorkspace })),
+)
 import { DimsCtx } from '@/features/tags/dimensions'
 import { useWorkspaceModel } from './use-workspace-model'
 export function App() {
@@ -76,7 +79,11 @@ export function App() {
               </button>
               <span className="font-serif text-[18px] font-semibold">Cairn</span>
               <span className="text-[13px] text-g-sub ml-2">
-                {view === 'set' ? translate('app:settings') : KINDS[kind].label}
+                {view === 'set'
+                  ? translate('app:settings')
+                  : view === 'trash'
+                    ? translate('app:trash')
+                    : KINDS[kind].label}
               </span>
             </header>
             <LiveNotice state={model.live} />
@@ -85,9 +92,25 @@ export function App() {
                 {view === 'lib' && kind === 'article' && <Workspace {...libProps} />}
                 {view === 'lib' && kind === 'site' && <SiteWorkspace {...libProps} />}
                 {view === 'set' && <SettingsWorkspace model={model} />}
+                {view === 'trash' && <TrashWorkspace model={model} />}
               </Suspense>
             </div>
           </main>
+          {model.trashNotice && (
+            <div
+              role="status"
+              className="fixed bottom-6 left-1/2 z-40 flex w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-1 rounded-xl bg-g-text py-1.5 pl-5 pr-2 text-[13.5px] text-white shadow-[0_8px_28px_rgba(0,0,0,.28)] rise"
+            >
+              {translate('common:designReadOnly')}
+              <button
+                onClick={() => model.setTrashNotice(false)}
+                aria-label={translate('library:clear')}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full hover:bg-white/10"
+              >
+                <Icon d="M6 6l12 12M18 6 6 18" className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </DimsCtx.Provider>
     </MutationLock.Provider>

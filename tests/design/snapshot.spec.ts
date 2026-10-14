@@ -90,3 +90,31 @@ test('mobile navigation and hidden scrollbars retain stable layout', async ({ pa
       .evaluate((el) => getComputedStyle(el).scrollbarWidth),
   ).toBe('none')
 })
+
+test('trash preview rejects deletion and preserves snapshot after reload', async ({ page }) => {
+  const network: string[] = []
+  page.on('request', (r) => {
+    if (new URL(r.url()).pathname.startsWith('/api/') || new URL(r.url()).origin !== 'http://127.0.0.1:5197')
+      network.push(r.url())
+  })
+  await page.goto('/')
+  const article = snapshot.workspace.items[0]
+  await page
+    .getByRole('button', { name: new RegExp(article.title) })
+    .first()
+    .click()
+  await page.getByRole('button', { name: '移入回收站', exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: /保存、删除、预览计算和模型调用不执行/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: '原文快照', exact: true })).toBeVisible()
+  await page
+    .getByRole('complementary')
+    .getByRole('button', { name: /^回收站/ })
+    .click()
+  await expect(page.getByText('快照未包含回收站记录')).toBeVisible()
+  await page.reload()
+  await expect(page.getByText('快照未包含回收站记录')).toBeVisible()
+  await page.getByRole('button', { name: '返回收藏' }).click()
+  await expect(page.getByRole('heading', { name: `已收录 ${snapshot.workspace.items.length} 篇文章` })).toBeVisible()
+  expect(await page.evaluate(() => localStorage.getItem('cairn-ui:design:v1:trash'))).toBeNull()
+  expect(network).toEqual([])
+})

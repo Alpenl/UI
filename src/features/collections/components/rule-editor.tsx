@@ -1,30 +1,17 @@
 import { useState } from 'react'
+import { TagCloud } from '@/components/domain/tag-cloud'
 import type { Collection } from '@/domain/library'
 import { useLiveStore } from '@/api/live-store'
 import type { StructuralChange, TagScope } from '@/api/tag-structure'
-import { Btn } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import { P } from '@/components/ui/icons'
 import { Switch } from '@/components/ui/switch'
 import { useAppTranslation } from '@/i18n/use-translation'
 import { StructurePreview } from '@/features/tags/components/structure-preview'
 
-export function RuleEditor({ collection }: { collection: Collection }) {
-  const { t } = useAppTranslation()
-  const [open, setOpen] = useState(false)
-  const { data } = useLiveStore()
-  return (
-    <div className="contents">
-      <Btn kind="outline" onClick={() => setOpen(!open)}>
-        {t('admin:editScopeRule')}
-      </Btn>
-      {open && (
-        <RuleForm key={data.collectionRevisions[collection.id]} collection={collection} close={() => setOpen(false)} />
-      )}
-    </div>
-  )
-}
-function RuleForm({ collection: c, close }: { collection: Collection; close: () => void }) {
+type Field = 'tag_refs' | 'exclude_tag_refs'
+
+export function RuleForm({ collection: c, close }: { collection: Collection; close: () => void }) {
   const { t } = useAppTranslation()
   const { data } = useLiveStore()
   const ref = (name: string) => data.tags.find((tag) => tag.name === name)?.ref ?? name
@@ -45,121 +32,199 @@ function RuleForm({ collection: c, close }: { collection: Collection; close: () 
   })
   const rule = change.rule!
   const patch = (values: Partial<typeof rule>) => setChange((x) => ({ ...x, rule: { ...x.rule!, ...values } }))
-  const toggles = [
-    ['admin:ruleEnabled', rule.enabled, (v: boolean) => patch({ enabled: v })],
-    [
-      'admin:reviewRequired',
-      rule.admission === 'review',
-      (v: boolean) => patch({ admission: v ? 'review' : 'direct' }),
-    ],
-    ['admin:confirmedOnly', rule.confirmed_only, (v: boolean) => patch({ confirmed_only: v })],
-  ] as const
-  const row = 'flex items-center justify-between gap-4 h-11 border-b border-g-line text-[13.5px]'
+  const used = new Set([...rule.tag_refs, ...rule.exclude_tag_refs])
+  const available = data.tags.filter((tag) => tag.enabled && !used.has(tag.ref))
+
+  const add = (field: Field, value: string) => {
+    const modeKey = field === 'tag_refs' ? 'tag_modes' : 'exclude_modes'
+    setChange((x) => ({
+      ...x,
+      [modeKey]: { ...x[modeKey], [value]: field === 'tag_refs' ? 'with_narrower' : 'exact' },
+      rule: { ...x.rule!, [field]: [...x.rule![field], value] },
+    }))
+  }
+  const remove = (field: Field, value: string) => {
+    const modeKey = field === 'tag_refs' ? 'tag_modes' : 'exclude_modes'
+    setChange((x) => {
+      const modes = { ...x[modeKey] }
+      delete modes[value]
+      return { ...x, [modeKey]: modes, rule: { ...x.rule!, [field]: x.rule![field].filter((v) => v !== value) } }
+    })
+  }
+
+  const disabled = !rule.enabled
   return (
-    <section className="w-full order-3 pt-2 text-[13px]">
-      <div className="max-w-[520px]">
-        {toggles.map(([key, on, set]) => (
-          <div key={key} className={row}>
-            <span>{t(key)}</span>
-            <Switch on={on} onChange={set} label={t(key)} />
+    <div className="space-y-8">
+      <section className="rounded-md border border-g-line bg-g-paper/60 p-4 flex items-start gap-4">
+        <div className="flex-1">
+          <p className="text-[14px] font-medium">{t('admin:ruleEnabled')}</p>
+          <p className="text-[12.5px] text-g-sub mt-1 leading-relaxed">{t('admin:ruleEnabledHint')}</p>
+        </div>
+        <Switch on={rule.enabled} onChange={(v) => patch({ enabled: v })} label={t('admin:ruleEnabled')} />
+      </section>
+
+      <div className={`space-y-8 transition ${disabled ? 'opacity-50' : ''}`}>
+        <section>
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-[12px] tracking-wide text-g-sub">{t('admin:tagRulesOptional')}</h3>
+            <div
+              role="group"
+              aria-label={t('admin:ruleMatching')}
+              className="inline-flex gap-0.5 rounded-md border border-g-line bg-white p-0.5 text-[12px]"
+            >
+              {(['any', 'all'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={rule.mode === m}
+                  onClick={() => patch({ mode: m })}
+                  className={`h-6 px-3 rounded-[3px] transition ${rule.mode === m ? 'bg-g-text text-white font-medium' : 'text-g-sub hover:text-g-text'}`}
+                >
+                  {m === 'any' ? t('admin:matchAny') : t('admin:matchAll')}
+                </button>
+              ))}
+            </div>
           </div>
-        ))}
-        <div className={row} role="group" aria-label={t('admin:ruleMatching')}>
-          <span>{t('admin:ruleMatching')}</span>
-          <div className="flex rounded-md border border-g-line overflow-hidden text-[12.5px]">
-            {(['any', 'all'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                aria-pressed={rule.mode === m}
-                onClick={() => patch({ mode: m })}
-                className={`h-7 px-3.5 transition ${rule.mode === m ? 'bg-g-text text-white font-medium' : 'text-g-sub hover:text-g-text'}`}
-              >
-                {m === 'any' ? t('admin:matchAny') : t('admin:matchAll')}
-              </button>
-            ))}
+          <TagField
+            field="tag_refs"
+            values={rule.tag_refs}
+            modes={change.tag_modes ?? {}}
+            tags={data.tags as { ref: string; name: string; dim: string }[]}
+            available={available as { ref: string; name: string; dim: string }[]}
+            onAdd={add}
+            onRemove={remove}
+            onMode={(v, m) => setChange((x) => ({ ...x, tag_modes: { ...x.tag_modes, [v]: m } }))}
+          />
+        </section>
+
+        <section>
+          <h3 className="text-[12px] tracking-wide text-g-sub">{t('admin:excludedTags')}</h3>
+          <TagField
+            field="exclude_tag_refs"
+            values={rule.exclude_tag_refs}
+            modes={change.exclude_modes ?? {}}
+            tags={data.tags as { ref: string; name: string; dim: string }[]}
+            available={available as { ref: string; name: string; dim: string }[]}
+            onAdd={add}
+            onRemove={remove}
+            onMode={(v, m) => setChange((x) => ({ ...x, exclude_modes: { ...x.exclude_modes, [v]: m } }))}
+          />
+        </section>
+
+        <section className="divide-y divide-g-line border-y border-g-line">
+          {(
+            [
+              [
+                'admin:reviewRequired',
+                'admin:reviewRequiredHint',
+                rule.admission === 'review',
+                (v: boolean) => patch({ admission: v ? 'review' : 'direct' }),
+              ],
+              [
+                'admin:confirmedOnly',
+                'admin:confirmedOnlyHint',
+                rule.confirmed_only,
+                (v: boolean) => patch({ confirmed_only: v }),
+              ],
+            ] as const
+          ).map(([key, hint, on, set]) => (
+            <div key={key} className="flex items-start gap-4 py-3.5">
+              <div className="flex-1">
+                <p className="text-[13.5px]">{t(key)}</p>
+                <p className="text-[12px] text-g-sub mt-0.5">{t(hint)}</p>
+              </div>
+              <Switch on={on} onChange={set} label={t(key)} />
+            </div>
+          ))}
+        </section>
+      </div>
+
+      <section className="rounded-md border border-g-line p-4">
+        <h3 className="text-[12px] tracking-wide text-g-sub">{t('admin:impactSection')}</h3>
+        <p className="text-[12.5px] text-g-sub mt-1">{t('admin:impactSectionHint')}</p>
+        <StructurePreview change={change} onSaved={close} />
+      </section>
+    </div>
+  )
+}
+
+function TagField({
+  field,
+  values,
+  tags,
+  available,
+  onAdd,
+  onRemove,
+}: {
+  field: Field
+  values: string[]
+  modes: Record<string, TagScope>
+  tags: { ref: string; name: string; dim: string }[]
+  available: { ref: string; name: string; dim: string }[]
+  onAdd: (f: Field, v: string) => void
+  onRemove: (f: Field, v: string) => void
+  onMode: (v: string, m: TagScope) => void
+}) {
+  const { t } = useAppTranslation()
+  const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [q, setQ] = useState('')
+  if (editing && !values.length) setEditing(false)
+  const find = (v: string) => tags.find((tag) => tag.ref === v)
+  const chipBtn = (on: boolean) =>
+    `h-7 px-2.5 rounded-full text-[12px] inline-flex items-center gap-1 transition ${on ? 'bg-g-text text-white' : 'text-g-blue hover:bg-g-tint'}`
+  return (
+    <div className="mt-3">
+      <TagCloud
+        editing={editing}
+        onRemove={(v) => onRemove(field, v)}
+        empty={<p className="text-[13px] text-g-mute">{t('admin:noTagsYet')}</p>}
+        items={values.map((value) => {
+          return {
+            id: value,
+            label: find(value)?.name ?? value,
+            dim: find(value)?.dim ?? 'topic',
+          }
+        })}
+      />
+      <div className="mt-2.5 flex items-center gap-1">
+        <button type="button" onClick={() => (setAdding((v) => !v), setEditing(false))} className={chipBtn(adding)}>
+          <Icon d={adding ? P.check : P.plus} className="w-3 h-3" />
+          {adding ? t('admin:done') : t(field === 'tag_refs' ? 'admin:addPositiveTag' : 'admin:addExcludeTag')}
+        </button>
+        {values.length > 0 && (
+          <button
+            type="button"
+            onClick={() => (setEditing((v) => !v), setAdding(false))}
+            className={`${chipBtn(editing)} ${editing ? '' : '!text-g-sub hover:!bg-g-surface'}`}
+          >
+            <Icon d={editing ? P.check : P.edit} className="w-3 h-3" />
+            {editing ? t('admin:done') : t('library:removeTags')}
+          </button>
+        )}
+      </div>
+      {adding && (
+        <div className="mt-3 rounded-lg border border-g-line bg-g-paper/60 p-3">
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('admin:searchTags')}
+            aria-label={t('admin:searchTags')}
+            className="w-full h-8 px-2.5 mb-3 rounded-md bg-white border border-g-line text-[12.5px] outline-none focus:border-g-blue"
+          />
+          <div className="max-h-64 overflow-y-auto scroll-quiet">
+            <TagCloud
+              size="sm"
+              onPick={(v) => onAdd(field, v)}
+              empty={<p className="text-[12.5px] text-g-sub">{t('admin:noMatchingTags')}</p>}
+              items={available
+                .filter((o) => o.name.toLowerCase().includes(q.trim().toLowerCase()))
+                .map((o) => ({ id: o.ref, label: o.name, dim: o.dim }))}
+            />
           </div>
         </div>
-      </div>
-      <div className="mt-7 grid grid-cols-2 gap-x-10 gap-y-6 max-[760px]:grid-cols-1">
-        {(['tag_refs', 'exclude_tag_refs'] as const).map((field) => {
-          const modeKey = field === 'tag_refs' ? 'tag_modes' : 'exclude_modes'
-          const choices = rule[field]
-          return (
-            <fieldset key={field} className="min-w-0">
-              <legend className="w-full flex items-center gap-2 pb-2 mb-1 border-b border-g-line text-[12px] tracking-wide text-g-sub">
-                {t(field === 'tag_refs' ? 'admin:tagRulesOptional' : 'admin:excludedTags')}
-                <span className="tabular-nums text-g-mute">{choices.length}</span>
-              </legend>
-              {choices.map((value) => (
-                <div key={value} className="flex items-center gap-2 h-10 border-b border-g-line/70">
-                  <span className="flex-1 min-w-0 truncate text-[13.5px]">
-                    {data.tags.find((tag) => tag.ref === value)?.name ?? value}
-                  </span>
-                  <select
-                    aria-label={t('admin:conditionScope')}
-                    className="h-7 pl-2 text-[12px] text-g-sub"
-                    value={change[modeKey]?.[value] ?? 'exact'}
-                    onChange={(e) =>
-                      setChange((x) => ({ ...x, [modeKey]: { ...x[modeKey], [value]: e.target.value as TagScope } }))
-                    }
-                  >
-                    <option value="exact">{t('admin:exactTag')}</option>
-                    <option value="with_narrower">{t('admin:withNarrower')}</option>
-                  </select>
-                  <button
-                    type="button"
-                    aria-label={t('admin:delete')}
-                    title={t('admin:delete')}
-                    className="w-7 h-7 grid place-items-center rounded-[4px] text-g-sub hover:bg-g-danger-bg hover:text-g-red transition"
-                    onClick={() => {
-                      const modes = { ...change[modeKey] }
-                      delete modes[value]
-                      setChange((x) => ({
-                        ...x,
-                        [modeKey]: modes,
-                        rule: { ...rule, [field]: choices.filter((v) => v !== value) },
-                      }))
-                    }}
-                  >
-                    <Icon d={P.x} className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-              <select
-                aria-label={t(field === 'tag_refs' ? 'admin:addPositiveTag' : 'admin:addExcludeTag')}
-                value=""
-                className="mt-3 h-8 pl-3 text-[13px] text-g-sub w-full"
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value)
-                    setChange((x) => ({
-                      ...x,
-                      [modeKey]: { ...x[modeKey], [value]: field === 'tag_refs' ? 'with_narrower' : 'exact' },
-                      rule: { ...rule, [field]: [...choices, value] },
-                    }))
-                }}
-              >
-                <option value="">+ {t('admin:addTag')}</option>
-                {data.tags
-                  .filter(
-                    (tag) =>
-                      tag.enabled && !rule.tag_refs.includes(tag.ref) && !rule.exclude_tag_refs.includes(tag.ref),
-                  )
-                  .map((tag) => (
-                    <option key={tag.ref} value={tag.ref}>
-                      {tag.name}
-                    </option>
-                  ))}
-              </select>
-            </fieldset>
-          )
-        })}
-      </div>
-      <StructurePreview change={change} onSaved={close} />
-      <div className="mt-2">
-        <Btn onClick={close}>{t('admin:cancel')}</Btn>
-      </div>
-    </section>
+      )}
+    </div>
   )
 }

@@ -25,6 +25,7 @@ import { localizeDimensions } from '@/features/tags/localize-dimensions'
 import { usePersisted } from '@/hooks/use-persisted'
 import { useAppTranslation as useTranslation } from '@/i18n/use-translation'
 import { ARTS0, COLS0, TAGS0 } from '@/mocks/fixtures'
+import { DESIGN } from '@/api/production-mode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 export function useWorkspaceModel() {
   const { t: translate } = useTranslation()
@@ -58,6 +59,13 @@ export function useWorkspaceModel() {
   const [mode, setMode] = useRouteField('matchMode')
   const [openDims, setOpenDims] = useState<Dim[]>(['topic'])
   const [navOpen, setNavOpen] = useState(false)
+  const trashCount = 0
+  const [trashNotice, setTrashNotice] = useState(false)
+  useEffect(() => {
+    if (!trashNotice) return
+    const timer = setTimeout(() => setTrashNotice(false), 6000)
+    return () => clearTimeout(timer)
+  }, [trashNotice])
   const [setTab, setSetTab] = useRouteField('tab')
   const [hubKind, setHubKind] = useRouteField('collectionKind')
   const openSettings = (t: SetTab) => {
@@ -333,6 +341,11 @@ export function useWorkspaceModel() {
     setView('lib')
     patch({ sel: id }, it.kind)
   }
+  const openTrash = () => {
+    setNavOpen(false)
+    setView('trash')
+  }
+  const trashArticles = () => setTrashNotice(true)
   const goLib = (f: () => void) => {
     setNavOpen(false)
     setView('lib')
@@ -358,9 +371,9 @@ export function useWorkspaceModel() {
     : quick === 'todo'
       ? translate('app:needsAttention')
       : fTags.length
-        ? translate('app:filteredTags', {
-            tags: fTags.join(' ' + (mode === 'any' ? translate('app:or') : translate('app:and')) + ' '),
-          })
+        ? fTags.length > 1
+          ? `${translate('app:tagFilterHeading')} · ${translate(mode === 'any' ? 'admin:matchAny' : 'admin:matchAll')}`
+          : translate('app:tagFilterHeading')
         : q.trim()
           ? translate('app:searchResults')
           : range !== 'all'
@@ -413,6 +426,7 @@ export function useWorkspaceModel() {
     fTags,
     toggleTag,
     backToArticle,
+    trashArticle: DESIGN ? () => trashArticles() : undefined,
   }
   return {
     server,
@@ -463,6 +477,11 @@ export function useWorkspaceModel() {
     activeCols,
     todo,
     libProps,
+    trashCount,
+    trashNotice,
+    setTrashNotice,
+    openTrash,
+    trashArticles,
   }
 }
 export type WorkspaceModel = ReturnType<typeof useWorkspaceModel>
